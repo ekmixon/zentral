@@ -42,8 +42,7 @@ def get_conf_dir():
 def get_raw_configuration():
     # env
     for env_var in ZENTRAL_CONF_ENV_VARS:
-        raw_cfg = os.environ.get(env_var)
-        if raw_cfg:
+        if raw_cfg := os.environ.get(env_var):
             if env_var.startswith("B64GZIP"):
                 try:
                     raw_cfg = gzip.decompress(base64.b64decode(raw_cfg))
@@ -52,9 +51,7 @@ def get_raw_configuration():
             logger.info("Got raw configuration from environment")
             return raw_cfg, "ENV"
 
-    # file
-    conf_dir = get_conf_dir()
-    if conf_dir:
+    if conf_dir := get_conf_dir():
         for filename in ("base.json", "base.yaml", "base.yml"):
             filepath = os.path.join(conf_dir, filename)
             if os.path.exists(filepath):
@@ -62,9 +59,9 @@ def get_raw_configuration():
                     with open(filepath, "r") as f:
                         raw_cfg = f.read()
                 except Exception:
-                    logger.exception("Could not read configuration file {}".format(filepath))
+                    logger.exception(f"Could not read configuration file {filepath}")
                 else:
-                    logger.info("Got raw configuration from file {}".format(filepath))
+                    logger.info(f"Got raw configuration from file {filepath}")
                     return raw_cfg, filepath
 
     raise ImproperlyConfigured("Could not get raw configuration")
@@ -78,7 +75,7 @@ def get_configuration():
             return loader(raw_cfg, **kwargs)
         except (ValueError, yaml.YAMLError):
             pass
-    raise ImproperlyConfigured("Could not parse raw configuration from {}".format(src))
+    raise ImproperlyConfigured(f"Could not parse raw configuration from {src}")
 
 
 class APIDict(ConfigDict):
@@ -108,13 +105,10 @@ class APIDict(ConfigDict):
         # if fqdn or fqdn_mtls build tls hostnames
         for src, dest in (("fqdn", "tls_hostname"),
                           ("fqdn_mtls", "tls_hostname_for_client_cert_auth")):
-            value = self.get(src)
-            if value:
-                self._collection[dest] = "https://{}".format(value)
-            else:
-                deprecated_value = self.get(dest)
-                if deprecated_value:
-                    self._collection[src] = urlparse(deprecated_value).netloc
+            if value := self.get(src):
+                self._collection[dest] = f"https://{value}"
+            elif deprecated_value := self.get(dest):
+                self._collection[src] = urlparse(deprecated_value).netloc
 
 
 class ZentralSettings(ConfigDict):
@@ -143,8 +137,7 @@ settings = ZentralSettings(get_configuration())
 
 
 def get_user_templates_dir():
-    conf_dir = get_conf_dir()
-    if conf_dir:
+    if conf_dir := get_conf_dir():
         template_dir = os.path.join(conf_dir, "templates")
         if os.path.isdir(template_dir):
             return template_dir

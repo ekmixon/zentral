@@ -57,18 +57,26 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
 
     def test_create_distributed_query_redirect(self):
         query = self._force_query()
-        self._login_redirect("{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk))
+        self._login_redirect(
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}'
+        )
 
     def test_create_distributed_query_permission_denied(self):
         query = self._force_query()
         self._login()
-        response = self.client.get("{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk))
+        response = self.client.get(
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}'
+        )
+
         self.assertEqual(response.status_code, 403)
 
     def test_create_distributed_query_get(self):
         query = self._force_query()
         self._login("osquery.add_distributedquery")
-        response = self.client.get("{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk))
+        response = self.client.get(
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}'
+        )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_form.html")
         self.assertContains(response, "Launch query")
@@ -79,11 +87,14 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
         query = self._force_query()
         self._login("osquery.add_distributedquery", "osquery.view_distributedquery")
         response = self.client.post(
-            "{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk),
-            {"valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-             "shard": "100"},
-            follow=True
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}',
+            {
+                "valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "shard": "100",
+            },
+            follow=True,
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_detail.html")
         self.assertEqual(response.context["query"], query)
@@ -96,12 +107,15 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
         query = self._force_query()
         self._login("osquery.add_distributedquery", "osquery.view_distributedquery")
         response = self.client.post(
-            "{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk),
-            {"valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-             "valid_until": "2021-02-18 20:55:00",
-             "shard": "100"},
-            follow=True
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}',
+            {
+                "valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "valid_until": "2021-02-18 20:55:00",
+                "shard": "100",
+            },
+            follow=True,
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_form.html")
         self.assertContains(response, "Valid until must be greater than valid from")
@@ -110,12 +124,15 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
         query = self._force_query()
         self._login("osquery.add_distributedquery", "osquery.view_distributedquery")
         response = self.client.post(
-            "{}?q={}".format(reverse("osquery:create_distributed_query"), query.pk),
-            {"valid_from": "2020-07-30 11:50:00",
-             "valid_until": "2021-02-18 20:55:00",
-             "shard": "100"},
-            follow=True
+            f'{reverse("osquery:create_distributed_query")}?q={query.pk}',
+            {
+                "valid_from": "2020-07-30 11:50:00",
+                "valid_until": "2021-02-18 20:55:00",
+                "shard": "100",
+            },
+            follow=True,
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_form.html")
         self.assertContains(response, "Valid until is in the past")
@@ -123,8 +140,10 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
     def test_create_distributed_query_halt_current_get(self):
         distributed_query = self._force_distributed_query()
         self._login("osquery.add_distributedquery")
-        response = self.client.post("{}?q={}".format(reverse("osquery:create_distributed_query"),
-                                                     distributed_query.query.pk))
+        response = self.client.post(
+            f'{reverse("osquery:create_distributed_query")}?q={distributed_query.query.pk}'
+        )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_form.html")
         self.assertContains(response, "Launch query")
@@ -135,11 +154,14 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
         distributed_query = self._force_distributed_query()
         self._login("osquery.add_distributedquery", "osquery.view_distributedquery")
         response = self.client.post(
-            "{}?q={}".format(reverse("osquery:create_distributed_query"), distributed_query.query.pk),
-            {"valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-             "shard": "100"},
-            follow=True
+            f'{reverse("osquery:create_distributed_query")}?q={distributed_query.query.pk}',
+            {
+                "valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "shard": "100",
+            },
+            follow=True,
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_detail.html")
         self.assertEqual(response.context["query"], distributed_query.query)
@@ -153,12 +175,15 @@ class OsquerySetupDistributedQueriesViewsTestCase(TestCase):
         self._login("osquery.add_distributedquery", "osquery.view_distributedquery")
         pre_post_dt = datetime.utcnow()
         response = self.client.post(
-            "{}?q={}".format(reverse("osquery:create_distributed_query"), distributed_query.query.pk),
-            {"valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-             "shard": "100",
-             "halt_current_runs": "on"},
-            follow=True
+            f'{reverse("osquery:create_distributed_query")}?q={distributed_query.query.pk}',
+            {
+                "valid_from": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "shard": "100",
+                "halt_current_runs": "on",
+            },
+            follow=True,
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "osquery/distributedquery_detail.html")
         self.assertEqual(response.context["query"], distributed_query.query)

@@ -15,38 +15,49 @@ class AccountUsersViewsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         # ui user
-        cls.ui_user = User.objects.create_user(get_random_string(),
-                                               "{}@zentral.io".format(get_random_string()),
-                                               get_random_string(),
-                                               is_superuser=False)
+        cls.ui_user = User.objects.create_user(
+            get_random_string(),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_superuser=False,
+        )
+
         # group
         cls.ui_group = Group.objects.create(name=get_random_string())
         cls.ui_user.groups.set([cls.ui_group])
         # superuser
-        cls.superuser = User.objects.create_user(get_random_string(19),
-                                                 "{}@zentral.io".format(get_random_string()),
-                                                 get_random_string(),
-                                                 is_superuser=True)
+        cls.superuser = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_superuser=True,
+        )
+
         # user
         cls.pwd = get_random_string(18)
-        cls.user = User.objects.create_user(get_random_string(19),
-                                            "{}@zentral.io".format(get_random_string()),
-                                            get_random_string())
+        cls.user = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+        )
+
         # remote user
-        cls.remoteuser = User.objects.create_user(get_random_string(19),
-                                                  "{}@zentral.io".format(get_random_string()),
-                                                  get_random_string(45),
-                                                  is_remote=True)
+        cls.remoteuser = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(45),
+            is_remote=True,
+        )
 
     # auth utils
 
     def login_redirect(self, url_name, *args):
-        url = reverse("accounts:{}".format(url_name), args=args)
+        url = reverse(f"accounts:{url_name}", args=args)
         response = self.client.get(url)
         self.assertRedirects(response, "{u}?next={n}".format(u=reverse("login"), n=url))
 
     def permission_denied(self, url_name, *args):
-        url = reverse("accounts:{}".format(url_name), args=args)
+        url = reverse(f"accounts:{url_name}", args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 403)
 
@@ -212,7 +223,7 @@ class AccountUsersViewsTestCase(TestCase):
                                                (self.remoteuser, True, False),
                                                (self.superuser, False, True)):
             response = self.client.get(reverse("accounts:update_user", args=(user.id,)))
-            self.assertContains(response, "Update user {}".format(user))
+            self.assertContains(response, f"Update user {user}")
             form = response.context["form"]
             if ue_disabled:
                 self.assertNotIn("username", form.fields)
@@ -265,7 +276,7 @@ class AccountUsersViewsTestCase(TestCase):
         user_str = str(self.user)
         response = self.client.post(reverse("accounts:delete_user", args=(self.user.id,)),
                                     follow=True)
-        self.assertContains(response, "User {} deleted".format(user_str))
+        self.assertContains(response, f"User {user_str} deleted")
         self.assertTemplateUsed(response, "accounts/user_list.html")
         self.assertContains(response, "3 User")
 
@@ -279,10 +290,13 @@ class AccountUsersViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_create_api_token_no_perms(self):
-        service_account = User.objects.create_user(get_random_string(19),
-                                                   "{}@zentral.io".format(get_random_string()),
-                                                   get_random_string(),
-                                                   is_service_account=True)
+        service_account = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_service_account=True,
+        )
+
         self.login()
         # service account OK, but without the required permissions
         response = self.client.post(reverse("accounts:create_user_api_token", args=(service_account.id,)),
@@ -302,10 +316,13 @@ class AccountUsersViewsTestCase(TestCase):
         self.assertNotContains(response, "Users")
 
     def test_server_account_create_api_token(self):
-        service_account = User.objects.create_user(get_random_string(19),
-                                                   "{}@zentral.io".format(get_random_string()),
-                                                   get_random_string(),
-                                                   is_service_account=True)
+        service_account = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_service_account=True,
+        )
+
         self.login("accounts.view_user", "authtoken.add_token")
         response = self.client.post(reverse("accounts:create_user_api_token", args=(service_account.id,)),
                                     follow=True)
@@ -325,10 +342,13 @@ class AccountUsersViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_delete_api_token_no_perms(self):
-        service_account = User.objects.create_user(get_random_string(19),
-                                                   "{}@zentral.io".format(get_random_string()),
-                                                   get_random_string(),
-                                                   is_service_account=True)
+        service_account = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_service_account=True,
+        )
+
         self.login()
         # service account OK, but without the required permissions
         response = self.client.post(reverse("accounts:delete_user_api_token", args=(service_account.id,)),
@@ -344,10 +364,13 @@ class AccountUsersViewsTestCase(TestCase):
         self.assertEqual(Token.objects.filter(user=self.ui_user).count(), 0)
 
     def test_delete_service_account_api_token(self):
-        service_account = User.objects.create_user(get_random_string(19),
-                                                   "{}@zentral.io".format(get_random_string()),
-                                                   get_random_string(),
-                                                   is_service_account=True)
+        service_account = User.objects.create_user(
+            get_random_string(19),
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
+            is_service_account=True,
+        )
+
         token, _ = Token.objects.get_or_create(user=service_account)
         self.login("accounts.view_user", "authtoken.delete_token")
         response = self.client.post(reverse("accounts:delete_user_api_token", args=(service_account.id,)),

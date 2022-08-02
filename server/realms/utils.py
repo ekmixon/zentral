@@ -84,7 +84,7 @@ def build_password_hash_dict(password):
     # see https://developer.apple.com/documentation/devicemanagement/setautoadminpasswordcommand/command
     # for the compatibility
     password = password.encode("utf-8")
-    salt = bytearray(random.getrandbits(8) for i in range(32))
+    salt = bytearray(random.getrandbits(8) for _ in range(32))
     iterations = 39999
     # see https://github.com/micromdm/micromdm/blob/master/pkg/crypto/password/password.go macKeyLen !!!
     # Danke github.com/groob !!!

@@ -44,9 +44,11 @@ class MunkiSetupViewsTestCase(TestCase):
         self.client.force_login(self.user)
 
     def _post_as_json(self, url_name, data):
-        return self.client.post(reverse("munki:{}".format(url_name)),
-                                json.dumps(data),
-                                content_type="application/json")
+        return self.client.post(
+            reverse(f"munki:{url_name}"),
+            json.dumps(data),
+            content_type="application/json",
+        )
 
     def _force_configuration(self):
         return Configuration.objects.create(name=get_random_string())

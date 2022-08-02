@@ -27,10 +27,9 @@ def make_csp_nonce(request, length=16):
 
 def build_csp_header(request):
     csp_policies = DEFAULT_CSP_POLICIES.copy()
-    csp_nonce = getattr(request, '_csp_nonce', None)
-    if csp_nonce:
-        csp_policies["script-src"] += " 'nonce-{}'".format(csp_nonce)
-    return ";".join("{} {}".format(k, v) for k, v in csp_policies.items())
+    if csp_nonce := getattr(request, '_csp_nonce', None):
+        csp_policies["script-src"] += f" 'nonce-{csp_nonce}'"
+    return ";".join(f"{k} {v}" for k, v in csp_policies.items())
 
 
 def csp_middleware(get_response):

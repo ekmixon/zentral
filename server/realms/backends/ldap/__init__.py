@@ -34,7 +34,7 @@ def cleanup_user_attributes(d):
 
 
 def get_ldap_connection(host):
-    conn = ldap.initialize("ldap://{}".format(host))
+    conn = ldap.initialize(f"ldap://{host}")
     conn.set_option(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION3)
     conn.start_tls_s()
     return conn
@@ -63,7 +63,7 @@ class LDAPRealmBackend(BaseBackend):
         return self._conn
 
     def _get_user_dn(self, username):
-        return "uid={},{}".format(ldap.dn.escape_dn_chars(username), self.instance.config.get("users_base_dn"))
+        return f'uid={ldap.dn.escape_dn_chars(username)},{self.instance.config.get("users_base_dn")}'
 
     def authenticate(self, username, password):
         conn = self._get_ldap_conn()
@@ -98,13 +98,13 @@ class LDAPRealmBackend(BaseBackend):
         user_info = self.get_user_info(username)
 
         # default realm user attributes for update or create
-        realm_user_defaults = {"claims": user_info}
+        realm_user_defaults = {
+            "claims": user_info,
+            "password_hash": build_password_hash_dict(password)
+            if password
+            else {},
+        }
 
-        # password
-        if password:
-            realm_user_defaults["password_hash"] = build_password_hash_dict(password)
-        else:
-            realm_user_defaults["password_hash"] = {}
 
         for user_claim, user_claim_source in self.instance.iter_user_claim_mappings():
             value = user_info.get(user_claim_source)

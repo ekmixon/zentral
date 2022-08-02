@@ -19,10 +19,12 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(IndexView, self).get_context_data(**kwargs)
-        app_list = []
-        for app_name, app_config in apps.app_configs.items():
-            if getattr(app_config, "events_module", None) is not None:
-                app_list.append(app_name)
+        app_list = [
+            app_name
+            for app_name, app_config in apps.app_configs.items()
+            if getattr(app_config, "events_module", None) is not None
+        ]
+
         app_list.sort()
         context["apps"] = app_list
         return context
@@ -56,16 +58,19 @@ class AppHistogramDataView(LoginRequiredMixin, View):
             labels.append(dt.strftime(date_format))
             event_count_data.append(event_count)
             unique_msn_data.append(unique_msn)
-        datasets = {"event_count": {
-                        "label": "{} events".format(app),
-                        "backgroundColor": "rgba(122, 182, 160, 0.7)",
-                        "data": event_count_data
-                    },
-                    "unique_msn": {
-                        "label": "{} machines".format(app),
-                        "backgroundColor": "rgba(225, 100, 86, 0.7)",
-                        "data": unique_msn_data
-                    }}
+        datasets = {
+            "event_count": {
+                "label": f"{app} events",
+                "backgroundColor": "rgba(122, 182, 160, 0.7)",
+                "data": event_count_data,
+            },
+            "unique_msn": {
+                "label": f"{app} machines",
+                "backgroundColor": "rgba(225, 100, 86, 0.7)",
+                "data": unique_msn_data,
+            },
+        }
+
         return JsonResponse({"app": app,
                              "labels": labels,
                              "datasets": datasets})

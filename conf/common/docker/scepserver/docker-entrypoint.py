@@ -70,12 +70,12 @@ if __name__ == '__main__':
         warnings.warn("Not enough arguments.")
         sys.exit(2)
     cmd = sys.argv[1]
-    args = KNOWN_COMMANDS.get(cmd, None)
+    args = KNOWN_COMMANDS.get(cmd)
     if args:
         filename = args[0]
         args.extend(sys.argv[2:])
         wait_for_ca()
-        print('Launch known command "{}"'.format(cmd))
+        print(f'Launch known command "{cmd}"')
     else:
         filename = cmd
         args = sys.argv[1:]

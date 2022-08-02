@@ -51,7 +51,7 @@ class InventoryLoginRedirectTestCase(TestCase):
         cls.tag2 = Tag.objects.create(name="tag2", meta_business_unit=cls.bu2.meta_business_unit)
 
     def login_redirect(self, url_name, *args, query=None):
-        url = reverse("inventory:{}".format(url_name), args=args)
+        url = reverse(f"inventory:{url_name}", args=args)
         if query:
             url = "{u}?{q}".format(u=url, q=query)
         response = self.client.get(url)

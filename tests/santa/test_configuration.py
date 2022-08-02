@@ -5,7 +5,7 @@ from zentral.contrib.santa.models import Configuration
 
 class SantaConfigurationTestCase(TestCase):
     def test_local_configuration_url_keys(self):
-        more_info_url = "https://{}.de".format(get_random_string(34))
+        more_info_url = f"https://{get_random_string(34)}.de"
         file_changes_prefix_filters = "/private/tmp/"
 
         config = Configuration.objects.create(name=get_random_string(256),

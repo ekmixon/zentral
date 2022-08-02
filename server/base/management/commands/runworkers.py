@@ -59,8 +59,8 @@ class Command(BaseCommand):
         self.processes[idx] = (worker, p)
         if self.prometheus:
             self.prometheus_targets[idx] = {
-                "targets": ["{}:{}".format(self.external_hostname, prometheus_port)],
-                "labels": {"job": worker.name}
+                "targets": [f"{self.external_hostname}:{prometheus_port}"],
+                "labels": {"job": worker.name},
             }
 
     def write_prometheus_sd_file(self):
@@ -129,7 +129,7 @@ class Command(BaseCommand):
                 print(json.dumps({"workers": all_workers}))
             else:
                 for worker_name in all_workers:
-                    print("Worker '{}'".format(worker_name))
+                    print(f"Worker '{worker_name}'")
         if self.processes:
             if self.prometheus:
                 self.write_prometheus_sd_file()

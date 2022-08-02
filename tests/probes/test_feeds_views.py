@@ -264,6 +264,6 @@ class FeedViewsTestCase(TestCase):
         self._login("probes.view_feedprobe", "probes.add_probesource", "probes.view_probesource")
         response = self.client.post(url, {"probe_name": probe_name},
                                     follow=True)
-        self.assertContains(response, "Probe <em>{}</em>".format(probe_name), status_code=200)
+        self.assertContains(response, f"Probe <em>{probe_name}</em>", status_code=200)
         self.assertContains(response, feed.name)
         self.assertContains(response, feed_probe.name)

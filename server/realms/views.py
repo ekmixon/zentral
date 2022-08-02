@@ -116,7 +116,7 @@ class CreateRealmGroupMappingView(LocalUserRequiredMixin, PermissionRequiredMixi
         return ctx
 
     def get_success_url(self):
-        return "{}#{}".format(self.realm.get_absolute_url(), self.object.pk)
+        return f"{self.realm.get_absolute_url()}#{self.object.pk}"
 
 
 class UpdateRealmGroupMappingView(LocalUserRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -140,7 +140,7 @@ class UpdateRealmGroupMappingView(LocalUserRequiredMixin, PermissionRequiredMixi
         return ctx
 
     def get_success_url(self):
-        return "{}#{}".format(self.realm.get_absolute_url(), self.object.pk)
+        return f"{self.realm.get_absolute_url()}#{self.object.pk}"
 
 
 class DeleteRealmGroupMappingView(LocalUserRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -169,14 +169,15 @@ class LoginView(View):
                                         allowed_hosts={request.get_host()},
                                         require_https=request.is_secure()):
                 callback_kwargs["next_url"] = next_url
-        redirect_url = self.realm.backend_instance.initialize_session(request, callback, **callback_kwargs)
-        if redirect_url:
+        if redirect_url := self.realm.backend_instance.initialize_session(
+            request, callback, **callback_kwargs
+        ):
             return HttpResponseRedirect(redirect_url)
         else:
-            raise ValueError("Empty realm {} redirect URL".format(self.realm.pk))
+            raise ValueError(f"Empty realm {self.realm.pk} redirect URL")
 
     def get(self, request, *args, **kwargs):
-        redirect_url = "{}?realm={}".format(reverse("login"), self.realm.pk)
+        redirect_url = f'{reverse("login")}?realm={self.realm.pk}'
         return HttpResponseRedirect(redirect_url)
 
 
@@ -197,9 +198,8 @@ class TestRealmView(LocalUserRequiredMixin, PermissionRequiredMixin, View):
             logger.exception("Could not get realm %s redirect URL", realm.pk)
         if redirect_url:
             return HttpResponseRedirect(redirect_url)
-        else:
-            messages.error(request, "Configuration error")
-            return HttpResponseRedirect(realm.get_absolute_url())
+        messages.error(request, "Configuration error")
+        return HttpResponseRedirect(realm.get_absolute_url())
 
 
 class RealmAuthenticationSessionView(LocalUserRequiredMixin, PermissionRequiredMixin, DetailView):

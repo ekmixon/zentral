@@ -16,9 +16,10 @@ class InventoryAPITests(TestCase):
     def setUpTestData(cls):
         cls.user = User.objects.create_user(
             get_random_string(),
-            "{}@zentral.io".format(get_random_string()),
-            get_random_string()
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
         )
+
         cls.group = Group.objects.create(name=get_random_string())
         cls.user.groups.set([cls.group])
         cls.token, _ = Token.objects.get_or_create(user=cls.user)
@@ -72,7 +73,7 @@ class InventoryAPITests(TestCase):
     def _force_machine_tags(self, serial_number, number):
         taxonomy = Taxonomy.objects.create(name=get_random_string())
         tag_names = []
-        for i in range(number):
+        for _ in range(number):
             tag = Tag.objects.create(taxonomy=taxonomy, name=get_random_string())
             MachineTag.objects.create(serial_number=serial_number, tag=tag)
             tag_names.append(tag.name)

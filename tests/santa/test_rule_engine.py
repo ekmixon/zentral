@@ -415,7 +415,7 @@ class SantaRuleEngineTestCase(TestCase):
         self.assertEqual(machine_rule_qs.filter(cursor__isnull=True).count(), 5)
         # last batch, never acknowleged, the client keeps making new requests without cursor
         # and getting the last unacknowlegded rule
-        for i in range(2):
+        for _ in range(2):
             rule_batch, response_cursor_post_reset = MachineRule.objects.get_next_rule_batch(
                 self.enrolled_machine, []
             )
@@ -467,7 +467,7 @@ class SantaRuleEngineTestCase(TestCase):
         serialized_rule.pop("custom_msg", None)
         serialized_rule["policy"] = "REMOVE"
         response_cursor = None
-        for i in range(2):
+        for _ in range(2):
             rule_batch, response_cursor = MachineRule.objects.get_next_rule_batch(self.enrolled_machine, [])
             self.enrolled_machine.refresh_from_db()
             self.assertIsNotNone(response_cursor)

@@ -29,16 +29,17 @@ class GCPMetadataClient:
 
     def _make_request(self, rel_path=None):
         r = requests.get(
-            "{}{}".format(self.metadata_base_url, rel_path or ""),
+            f'{self.metadata_base_url}{rel_path or ""}',
             headers={"Metadata-Flavor": "Google"},
-            timeout=.5,
+            timeout=0.5,
         )
+
         r.raise_for_status()
         return r
 
     def get(self, key):
         key = key.strip("./~")
-        r = self._make_request("project/attributes/{}".format(key))
+        r = self._make_request(f"project/attributes/{key}")
         return r.text
 
 

@@ -179,10 +179,11 @@ class StartEnrollmentView(View):
                     "cn": enrollment_session.get_common_name(),
                     "org": enrollment_session.get_organization(),
                     "challenge": enrollment_session.get_challenge(),
-                    "url": "{}/scep".format(settings["api"]["tls_hostname"]),  # TODO: hardcoded scep url
+                    "url": f'{settings["api"]["tls_hostname"]}/scep',
                 },
                 "secret": enrollment_session.enrollment_secret.secret,
             }
+
 
             # post event
             post_enrollment_event(serial_number, self.user_agent, self.ip, enrollment_session.serialize_for_event())
@@ -253,4 +254,4 @@ class VerifySCEPCSRView(BaseVerifySCEPCSRView):
         if cn_prefix == "FLBT":
             return "filebeat_enrollment_session", EnrollmentSession.STARTED, "set_scep_verified_status"
         else:
-            self.abort("Unknown CN prefix {}".format(cn_prefix))
+            self.abort(f"Unknown CN prefix {cn_prefix}")

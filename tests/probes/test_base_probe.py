@@ -102,22 +102,25 @@ class InventoryFilterBaseProbeTestCase(TestCase):
 
     def test_inventory_filter_meta_business_units(self):
         inventory_filter = self.probe.inventory_filters[0]
-        self.assertEqual(inventory_filter.meta_business_unit_ids, set([self.mbu1.id, self.mbu2.id]))
+        self.assertEqual(
+            inventory_filter.meta_business_unit_ids, {self.mbu1.id, self.mbu2.id}
+        )
+
         self.assertEqual(inventory_filter.meta_business_units, [self.mbu1, self.mbu2])  # ordering !
 
     def test_inventory_filter_tags(self):
         inventory_filter = self.probe.inventory_filters[0]
-        self.assertEqual(inventory_filter.tag_ids, set([self.tag1.id]))
+        self.assertEqual(inventory_filter.tag_ids, {self.tag1.id})
         self.assertEqual(inventory_filter.tags, [self.tag1])
 
     def test_inventory_filter_platforms(self):
         inventory_filter = self.probe.inventory_filters[0]
-        self.assertEqual(inventory_filter.platforms, set(["WINDOWS", "MACOS", "LINUX"]))
+        self.assertEqual(inventory_filter.platforms, {"WINDOWS", "MACOS", "LINUX"})
         self.assertEqual(inventory_filter.get_platforms_display(), "Linux, macOS, Windows")  # ordering !
 
     def test_inventory_filter_types(self):
         inventory_filter = self.probe.inventory_filters[0]
-        self.assertEqual(inventory_filter.types, set(["TABLET", "LAPTOP"]))
+        self.assertEqual(inventory_filter.types, {"TABLET", "LAPTOP"})
         self.assertEqual(inventory_filter.get_types_display(), "Laptop, Tablet")  # ordering !
 
     def test_inventory_filter_test_machine(self):
@@ -319,14 +322,8 @@ class PayloadFilterBaseProbeTestCase(TestCase):
 
     def test_dotted_payload_attribute(self):
         payload_filter = self.probe.payload_filters[2]
-        for payload, result in (({"a": 1}, False),
-                                ({"a": {"b": {"d": "d"}}}, False),
-                                ({"a": {"b": {"c": "ab", "d": "d"}}}, False),
-                                ({"a": {"b": {"c": set(["abc"]), "d": "d"}}}, True),
-                                ({"a": {"b": [{"c": set(["abc"]), "d": "d"}]}}, True),
-                                ({"a": [{"b": [{"d": "u"},
-                                               {"c": "abc", "d": "d"}]}]}, True),
-                                ):
+        for payload, result in (({"a": 1}, False), ({"a": {"b": {"d": "d"}}}, False), ({"a": {"b": {"c": "ab", "d": "d"}}}, False), ({"a": {"b": {"c": {"abc"}, "d": "d"}}}, True), ({"a": {"b": [{"c": {"abc"}, "d": "d"}]}}, True), ({"a": [{"b": [{"d": "u"},
+                                               {"c": "abc", "d": "d"}]}]}, True)):
             self.assertEqual(payload_filter.test_event_payload(payload),
                              result)
 

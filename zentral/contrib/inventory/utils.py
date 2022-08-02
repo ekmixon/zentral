@@ -50,7 +50,7 @@ class BaseMSFilter:
         else:
             self.value = query_dict.get(self.get_query_kwarg())
             self.hidden = False
-        self.grouping_alias = "fg{}".format(idx)
+        self.grouping_alias = f"fg{idx}"
 
     def get_query_kwarg(self):
         return self.query_kwarg
@@ -58,7 +58,7 @@ class BaseMSFilter:
     def get_expressions(self, grouping=False):
         if grouping:
             if self.grouping_set:
-                yield "grouping({}) as {}".format(self.grouping_set[0], self.grouping_alias)
+                yield f"grouping({self.grouping_set[0]}) as {self.grouping_alias}"
             if self.expression:
                 yield self.expression
         elif self.expression:
@@ -67,7 +67,7 @@ class BaseMSFilter:
             else:
                 if "as" in self.expression:
                     expression, alias = self.expression.split(" as ")
-                    expression = "json_agg({})".format(expression)
+                    expression = f"json_agg({expression})"
                 else:
                     expression = self.expression
                     alias = None
@@ -172,32 +172,22 @@ class SourceFilter(BaseMSFilter):
 
     def grouping_value_from_grouping_result(self, grouping_result):
         gv = super().grouping_value_from_grouping_result(grouping_result)
-        if gv["id"] is None:
-            return None
-        return gv
+        return None if gv["id"] is None else gv
 
     @staticmethod
     def display_name(source):
         # TODO: better. see also zentral.inventory.models
         dn = [source["name"]]
-        config = source.get("config")
-        if config:
-            host = config.get("host")
-            if host:
+        if config := source.get("config"):
+            if host := config.get("host"):
                 dn.append(host)
         return "/".join(e for e in dn if e)
 
     def label_for_grouping_value(self, grouping_value):
-        if not grouping_value:
-            return self.none_value
-        else:
-            return self.display_name(grouping_value)
+        return self.display_name(grouping_value) if grouping_value else self.none_value
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
-        if not grouping_value:
-            return None
-        else:
-            return grouping_value["id"]
+        return grouping_value["id"] if grouping_value else None
 
     def process_fetched_record(self, record, for_filtering):
         source = record.pop("src_j", None)
@@ -240,9 +230,7 @@ class OSVersionFilter(BaseMSFilter):
 
     def grouping_value_from_grouping_result(self, grouping_result):
         gv = super().grouping_value_from_grouping_result(grouping_result)
-        if gv["id"] is None:
-            return None
-        return gv
+        return None if gv["id"] is None else gv
 
     @staticmethod
     def version(os_version):
@@ -252,19 +240,15 @@ class OSVersionFilter(BaseMSFilter):
 
     def version_with_build(self, os_version):
         version = self.version(os_version)
-        build = os_version.get("build")
-        if build:
-            version = "{} ({})".format(version, build)
+        if build := os_version.get("build"):
+            version = f"{version} ({build})"
         return version.strip()
 
     def display_name(self, os_version):
         return " ".join(e for e in (os_version["name"], self.version_with_build(os_version)) if e)
 
     def label_for_grouping_value(self, grouping_value):
-        if not grouping_value:
-            return self.none_value
-        else:
-            return self.display_name(grouping_value)
+        return self.display_name(grouping_value) if grouping_value else self.none_value
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
         if grouping_value:
@@ -305,15 +289,10 @@ class MetaBusinessUnitFilter(BaseMSFilter):
 
     def grouping_value_from_grouping_result(self, grouping_result):
         gv = super().grouping_value_from_grouping_result(grouping_result)
-        if gv["id"] is None:
-            return None
-        return gv
+        return None if gv["id"] is None else gv
 
     def label_for_grouping_value(self, grouping_value):
-        if not grouping_value:
-            return self.none_value
-        else:
-            return grouping_value["name"] or "?"
+        return grouping_value["name"] or "?" if grouping_value else self.none_value
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
         if grouping_value:
@@ -352,15 +331,10 @@ class MachineGroupFilter(BaseMSFilter):
 
     def grouping_value_from_grouping_result(self, grouping_result):
         gv = super().grouping_value_from_grouping_result(grouping_result)
-        if gv["id"] is None:
-            return None
-        return gv
+        return None if gv["id"] is None else gv
 
     def label_for_grouping_value(self, grouping_value):
-        if not grouping_value:
-            return self.none_value
-        else:
-            return grouping_value["name"] or "?"
+        return grouping_value["name"] or "?" if grouping_value else self.none_value
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
         if grouping_value:
@@ -432,11 +406,9 @@ class TagFilter(BaseMSFilter):
         if not grouping_value:
             return self.none_value
         label = grouping_value["name"] or "?"
-        mbu = grouping_value.get("meta_business_unit")
-        if mbu:
-            mbu_name = mbu.get("name")
-            if mbu_name:
-                label = "{}/{}".format(mbu_name, label)
+        if mbu := grouping_value.get("meta_business_unit"):
+            if mbu_name := mbu.get("name"):
+                label = f"{mbu_name}/{label}"
         return label
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
@@ -509,7 +481,7 @@ class BundleFilter(BaseMSFilter):
         )
 
     def get_query_kwarg(self):
-        return "a{}".format(self.idx)
+        return f"a{self.idx}"
 
     def joins(self):
         if self.bundle_id:
@@ -529,9 +501,9 @@ class BundleFilter(BaseMSFilter):
     def wheres(self):
         if self.value:
             if self.value != self.none_value:
-                yield "a{}.id = %s".format(self.idx)
+                yield f"a{self.idx}.id = %s"
             else:
-                yield "a{}.id is null".format(self.idx)
+                yield f"a{self.idx}.id is null"
 
     def where_args(self):
         if self.value and self.value != self.none_value:
@@ -539,9 +511,9 @@ class BundleFilter(BaseMSFilter):
 
     def serialize(self):
         if self.bundle_name:
-            return "a.n.{}".format(self.bundle_name)
+            return f"a.n.{self.bundle_name}"
         elif self.bundle_id:
-            return "a.i.{}".format(self.bundle_id)
+            return f"a.i.{self.bundle_id}"
 
     @staticmethod
     def display_name(osx_app):
@@ -551,17 +523,13 @@ class BundleFilter(BaseMSFilter):
         if not grouping_value:
             return self.none_value
         if self.bundle_id:
-            # TODO hack. Try to set a better title.
-            bundle_name = grouping_value["bundle_name"]
-            if bundle_name:
+            if bundle_name := grouping_value["bundle_name"]:
                 self.title = bundle_name
         return self.display_name(grouping_value)
 
     def grouping_value_from_grouping_result(self, grouping_result):
         gv = super().grouping_value_from_grouping_result(grouping_result)
-        if gv["id"] is None:
-            return None
-        return gv
+        return None if gv["id"] is None else gv
 
     def query_kwarg_value_from_grouping_value(self, grouping_value):
         if grouping_value:
@@ -587,13 +555,20 @@ class BundleFilter(BaseMSFilter):
                 bundle_dict["name"] = self.bundle_name
             elif self.bundle_id:
                 bundle_dict["id"] = self.bundle_id
-            if not osx_apps:
-                bundle_dict["version"] = {"min": self.unknown_value, "max": self.unknown_value}
-            else:
-                bundle_dict["version"] = {"min": (osx_apps[0].get("bundle_version_str")
-                                                  or osx_apps[0].get("bundle_version")),
-                                          "max": (osx_apps[-1].get("bundle_version_str")
-                                                  or osx_apps[-1].get("bundle_version"))}
+            bundle_dict["version"] = (
+                {
+                    "min": (
+                        osx_apps[0].get("bundle_version_str")
+                        or osx_apps[0].get("bundle_version")
+                    ),
+                    "max": (
+                        osx_apps[-1].get("bundle_version_str")
+                        or osx_apps[-1].get("bundle_version")
+                    ),
+                }
+                if osx_apps
+                else {"min": self.unknown_value, "max": self.unknown_value}
+            )
 
 
 class TypeFilter(BaseMSFilter):
@@ -615,10 +590,7 @@ class TypeFilter(BaseMSFilter):
             yield self.value
 
     def label_for_grouping_value(self, grouping_value):
-        if grouping_value:
-            return grouping_value.title()
-        else:
-            return self.none_value
+        return grouping_value.title() if grouping_value else self.none_value
 
     def process_fetched_record(self, record, for_filtering):
         if for_filtering and record.get("type") is None:
@@ -664,7 +636,7 @@ class SerialNumberFilter(BaseMSFilter):
 
     def where_args(self):
         if self.value:
-            yield "%{}%".format(connection.ops.prep_for_like_query(self.value))
+            yield f"%{connection.ops.prep_for_like_query(self.value)}%"
 
     def process_fetched_record(self, record, for_filtering):
         if not for_filtering:
@@ -696,8 +668,7 @@ class ComputerNameFilter(BaseMSFilter):
             yield self.value
 
     def process_fetched_record(self, record, for_filtering):
-        computer_name = record.pop("computer_name", None)
-        if computer_name:
+        if computer_name := record.pop("computer_name", None):
             record.setdefault("system_info", {})["computer_name"] = computer_name
         elif for_filtering:
             record.setdefault("system_info", {})["computer_name"] = self.unknown_value
@@ -730,8 +701,7 @@ class PrincipalUserNameFilter(BaseMSFilter):
 
     def process_fetched_record(self, record, for_filtering):
         for attr in ("principal_name", "display_name"):
-            val = record.pop(attr, None)
-            if val:
+            if val := record.pop(attr, None):
                 record.setdefault("principal_user", {})[attr] = val
 
 
@@ -757,8 +727,7 @@ class HardwareModelFilter(BaseMSFilter):
             yield self.value
 
     def process_fetched_record(self, record, for_filtering):
-        hardware_model = record.pop("hardware_model", None)
-        if hardware_model:
+        if hardware_model := record.pop("hardware_model", None):
             record.setdefault("system_info", {})["hardware_model"] = hardware_model
         elif for_filtering:
             record.setdefault("system_info", {})["hardware_model"] = self.unknown_value
@@ -803,14 +772,16 @@ class IncidentSeverityFilter(BaseMSFilter):
 
     def joins(self):
         yield (
-            "left join ("
-            "select mi.serial_number as serial_number, max(i.severity) as max_incident_severity "
-            "from incidents_machineincident as mi "
-            "join incidents_incident as i on (i.id = mi.incident_id) "
-            "where i.status in ({}) "
-            "group by mi.serial_number"
-            ") as mis on (mis.serial_number = ms.serial_number)"
-        ).format(",".join("'{}'".format(s) for s in OPEN_STATUSES))
+            (
+                "left join ("
+                "select mi.serial_number as serial_number, max(i.severity) as max_incident_severity "
+                "from incidents_machineincident as mi "
+                "join incidents_incident as i on (i.id = mi.incident_id) "
+                "where i.status in ({}) "
+                "group by mi.serial_number"
+                ") as mis on (mis.serial_number = ms.serial_number)"
+            ).format(",".join(f"'{s}'" for s in OPEN_STATUSES))
+        )
 
     def wheres(self):
         if self.value:
@@ -879,16 +850,13 @@ class MSQuery:
 
     def force_filter(self, filter_class, **filter_kwargs):
         """replace an existing filter from the same class or add it"""
-        found_f = None
-        for idx, f in enumerate(self.filters):
-            if isinstance(f, filter_class):
-                found_f = f
-                break
-        if not found_f:
-            self.add_filter(filter_class, **filter_kwargs)
-        else:
+        if found_f := next(
+            (f for f in self.filters if isinstance(f, filter_class)), None
+        ):
             new_f = filter_class(found_f.idx, self.query_dict, **filter_kwargs)
             self.filters = [f if f.idx != found_f.idx else new_f for f in self.filters]
+        else:
+            self.add_filter(filter_class, **filter_kwargs)
 
     def _deserialize_filters(self, serialized_filters):
         try:
@@ -910,15 +878,21 @@ class MSQuery:
                     self.add_filter(BundleFilter, bundle_id=value)
 
     def serialize_filters(self, filter_to_add=None, filter_to_remove=None, include_hidden=False):
-        return "-".join(f.serialize() for f in chain(self.filters, [filter_to_add])
-                        if f and f.optional and not f == filter_to_remove and (include_hidden or not f.hidden))
+        return "-".join(
+            f.serialize()
+            for f in chain(self.filters, [filter_to_add])
+            if f
+            and f.optional
+            and f != filter_to_remove
+            and ((include_hidden or not f.hidden))
+        )
 
     def get_url(self, page=None):
         qd = self.query_dict.copy()
         qd["sf"] = self.serialize_filters()
         if page is not None:
             qd["page"] = page
-        return "?{}".format(urllib.parse.urlencode(qd))
+        return f"?{urllib.parse.urlencode(qd)}"
 
     def redirect_url(self):
         if self._redirect:
@@ -961,8 +935,13 @@ class MSQuery:
                 available_filter = filter_class(idx, self.query_dict)
                 available_filter_qd = self.query_dict.copy()
                 available_filter_qd["sf"] = self.serialize_filters(filter_to_add=available_filter)
-                links.append((available_filter.title,
-                              "?{}".format(urllib.parse.urlencode(available_filter_qd))))
+                links.append(
+                    (
+                        available_filter.title,
+                        f"?{urllib.parse.urlencode(available_filter_qd)}",
+                    )
+                )
+
                 idx += 1
         return links
 
@@ -987,13 +966,20 @@ class MSQuery:
     # grouping
 
     def _build_grouping_query_with_args(self):
-        query = ["select"]
         args = []
-        # expressions
-        query.append(", ".join(e for f in self.filters for e in f.get_expressions(grouping=True)))
-        query.append(", count(distinct ms.serial_number)")
-        # base table
-        query.append("from inventory_machinesnapshot as ms")
+        query = [
+            "select",
+            *(
+                ", ".join(
+                    e
+                    for f in self.filters
+                    for e in f.get_expressions(grouping=True)
+                ),
+                ", count(distinct ms.serial_number)",
+                "from inventory_machinesnapshot as ms",
+            ),
+        ]
+
         # joins
         for join, join_args in self._iter_unique_joins_with_args():
             query.append(join)
@@ -1004,14 +990,16 @@ class MSQuery:
             wheres.extend(f.wheres())
             args.extend(f.where_args())
         if wheres:
-            query.append("WHERE")
-            query.append(" AND ".join(wheres))
+            query.extend(("WHERE", " AND ".join(wheres)))
         # group by sets
-        grouping_sets = ["({})".format(", ".join(gsi for gsi in f.grouping_set))
-                         for f in self.filters
-                         if f.grouping_set]
+        grouping_sets = [
+            f'({", ".join(f.grouping_set)})'
+            for f in self.filters
+            if f.grouping_set
+        ]
+
         grouping_sets.append("()")
-        query.append("GROUP BY GROUPING SETS ({})".format(", ".join(grouping_sets)))
+        query.append(f'GROUP BY GROUPING SETS ({", ".join(grouping_sets)})')
         return "\n".join(query), args
 
     def _make_grouping_query(self):
@@ -1019,10 +1007,7 @@ class MSQuery:
         cursor = connection.cursor()
         cursor.execute(query, args)
         columns = [col[0] for col in cursor.description]
-        results = []
-        for row in cursor.fetchall():
-            results.append(dict(zip(columns, row)))
-        return results
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     def _get_grouping_results(self):
         if self._grouping_results is None:
@@ -1032,12 +1017,18 @@ class MSQuery:
     def count(self):
         if self._count is None:
             all_grouping_aliases = [f.grouping_alias for f in self.filters]
-            for grouping_result in self._get_grouping_results():
-                if all(grouping_result.get(a, 1) == 1 for a in all_grouping_aliases):
-                    self._count = grouping_result["count"]
-                    break
-            else:
-                self._count = 0
+            self._count = next(
+                (
+                    grouping_result["count"]
+                    for grouping_result in self._get_grouping_results()
+                    if all(
+                        grouping_result.get(a, 1) == 1
+                        for a in all_grouping_aliases
+                    )
+                ),
+                0,
+            )
+
         return self._count
 
     def grouping_choices(self):
@@ -1045,8 +1036,9 @@ class MSQuery:
         for f in self.filters:
             if f.hidden:
                 continue
-            f_choices = f.grouping_choices_from_grouping_results(grouping_results)
-            if f_choices:
+            if f_choices := f.grouping_choices_from_grouping_results(
+                grouping_results
+            ):
                 yield f, f_choices
 
     def grouping_links(self):
@@ -1058,16 +1050,13 @@ class MSQuery:
                 f_up_links = []
                 for label, f_count, down_query_dict, up_query_dict in f_choices:
                     if up_query_dict is not None:
-                        up_link = "?{}".format(urllib.parse.urlencode(up_query_dict))
+                        up_link = f"?{urllib.parse.urlencode(up_query_dict)}"
                         f_up_links.append(up_link)
                         down_link = None
                     else:
                         up_link = None
-                        down_link = "?{}".format(urllib.parse.urlencode(down_query_dict))
-                    if count > 0:
-                        f_perc = f_count * 100 / count
-                    else:
-                        f_perc = 0
+                        down_link = f"?{urllib.parse.urlencode(down_query_dict)}"
+                    f_perc = f_count * 100 / count if count > 0 else 0
                     f_links.append((label, f_count, f_perc, down_link, up_link))
                 f_links.sort(key=lambda t: (t[0] == f.none_value, (t[0] or "").upper()))
                 if f.optional:
@@ -1075,7 +1064,7 @@ class MSQuery:
                     remove_filter_query_dict.pop("page", None)
                     remove_filter_query_dict.pop(f.get_query_kwarg(), None)
                     remove_filter_query_dict["sf"] = self.serialize_filters(filter_to_remove=f)
-                    f_r_link = "?{}".format(urllib.parse.urlencode(remove_filter_query_dict))
+                    f_r_link = f"?{urllib.parse.urlencode(remove_filter_query_dict)}"
                 else:
                     f_r_link = None
                 f_up_link = None
@@ -1090,12 +1079,15 @@ class MSQuery:
     # fetching
 
     def _build_fetching_query_with_args(self, paginate=True):
-        query = ["select"]
         args = []
-        # expressions
-        query.append(", ".join(e for f in self.filters for e in f.get_expressions()))
-        # base table
-        query.append("from inventory_machinesnapshot as ms")
+        query = [
+            "select",
+            *(
+                ", ".join(e for f in self.filters for e in f.get_expressions()),
+                "from inventory_machinesnapshot as ms",
+            ),
+        ]
+
         # joins
         for join, join_args in self._iter_unique_joins_with_args():
             query.append(join)
@@ -1106,28 +1098,21 @@ class MSQuery:
             wheres.extend(f.wheres())
             args.extend(f.where_args())
         if wheres:
-            query.append("WHERE")
-            query.append(" AND ".join(wheres))
-        # group bys
-        group_bys = [gb for gb in (f.get_group_by() for f in self.filters) if gb]
-        if group_bys:
-            query.append("GROUP BY {}".format(", ".join(group_bys)))
+            query.extend(("WHERE", " AND ".join(wheres)))
+        if group_bys := [
+            gb for gb in (f.get_group_by() for f in self.filters) if gb
+        ]:
+            query.append(f'GROUP BY {", ".join(group_bys)}')
         query = "\n".join(query)
         # pagination
         if paginate:
             limit = max(self.paginate_by, 1)
-            args.append(limit)
-            offset = max((self.page - 1) * limit, 0)
-            args.append(offset)
+            args.extend((limit, max((self.page - 1) * limit, 0)))
             limit_offset = " limit %s offset %s"
         else:
             limit_offset = ""
-        meta_query = (
-            "select ms.serial_number, json_agg(row_to_json(ms.*)) as machine_snapshots "
-            "from ({}) ms "
-            "group by ms.serial_number "
-            "order by min(ms.computer_name) asc, ms.serial_number asc{}"
-        ).format(query, limit_offset)
+        meta_query = f"select ms.serial_number, json_agg(row_to_json(ms.*)) as machine_snapshots from ({query}) ms group by ms.serial_number order by min(ms.computer_name) asc, ms.serial_number asc{limit_offset}"
+
         return meta_query, args
 
     def _make_fetching_query(self, paginate=True):

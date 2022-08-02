@@ -66,9 +66,7 @@ class SAMLRealmBackend(BaseBackend):
         try:
             settings["metadata"] = {"inline": [self.instance.config["idp_metadata"]]}
         except KeyError:
-            if missing_idp_metadata_ok:
-                pass
-            else:
+            if not missing_idp_metadata_ok:
                 raise
         sp_config = Saml2Config()
         sp_config.allow_unknown_attributes = True
@@ -126,9 +124,7 @@ class SAMLRealmBackend(BaseBackend):
         # default realm user attributes for update or create
         realm_user_defaults = {"claims": session_info}
 
-        # try to get the configured claims
-        ava = session_info.get('ava')
-        if ava:
+        if ava := session_info.get('ava'):
             for user_claim, user_claim_source in self.instance.iter_user_claim_mappings():
                 value = ava.get(user_claim_source)
                 if value:
@@ -147,14 +143,13 @@ class SAMLRealmBackend(BaseBackend):
 
         if not username:
             raise RealmUserError("No username found in SAML session info", realm_user_defaults)
-        else:
-            from realms.models import RealmUser
-            realm_user, _ = RealmUser.objects.update_or_create(
-                realm=self.instance,
-                username=username,
-                defaults=realm_user_defaults
-            )
-            return realm_user
+        from realms.models import RealmUser
+        realm_user, _ = RealmUser.objects.update_or_create(
+            realm=self.instance,
+            username=username,
+            defaults=realm_user_defaults
+        )
+        return realm_user
 
     @staticmethod
     def get_form_class():

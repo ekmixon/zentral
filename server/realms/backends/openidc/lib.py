@@ -27,7 +27,7 @@ def _b64encode_for_pkce(bytes_like):
 
 
 def _generate_code_verifier():
-    b = bytearray(random.getrandbits(8) for i in range(32))
+    b = bytearray(random.getrandbits(8) for _ in range(32))
     return _b64encode_for_pkce(b)
 
 
@@ -65,7 +65,7 @@ def build_authorization_code_flow_url(discovery_url, client_id, redirect_uri, ex
         data["code_challenge"] = code_challenge
 
     openid_configuration = _get_openid_configuration(discovery_url)
-    return "{}?{}".format(openid_configuration["authorization_endpoint"], urlencode(data))
+    return f'{openid_configuration["authorization_endpoint"]}?{urlencode(data)}'
 
 
 def verify_jws(token, client_id, openid_configuration):
@@ -84,11 +84,15 @@ def verify_jws(token, client_id, openid_configuration):
     # TODO cache
     jwks_response = requests.get(openid_configuration["jwks_uri"], headers={"Accept": "application/json"})
     jwks_response.raise_for_status()
-    jwk = None
-    for jwk_json in jwks_response.json()["keys"]:
-        if jwk_json["kid"] == header.kid:
-            jwk = JWK.from_json(jwk_json)
-            break
+    jwk = next(
+        (
+            JWK.from_json(jwk_json)
+            for jwk_json in jwks_response.json()["keys"]
+            if jwk_json["kid"] == header.kid
+        ),
+        None,
+    )
+
     if not jwk:
         raise SuspiciousOperation("Could not find ID token signing key")
 
@@ -156,9 +160,14 @@ def get_claims(discovery_url, client_id, redirect_uri, authorization_code, clien
     userinfo_endpoint = openid_configuration.get("userinfo_endpoint")
     access_token = response_j.get("access_token")
     if userinfo_endpoint and access_token:
-        userinfo_response = requests.get(userinfo_endpoint,
-                                         headers={"Accept": "application/json",
-                                                  "Authorization": "Bearer {}".format(access_token)})
+        userinfo_response = requests.get(
+            userinfo_endpoint,
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {access_token}",
+            },
+        )
+
         if userinfo_response.ok:
             claims.update(userinfo_response.json())
 

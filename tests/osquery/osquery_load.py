@@ -103,7 +103,7 @@ model_identifiers = {
 
 def make_random_word_function():
     with open("/usr/share/dict/words", "r", encoding="utf-8") as f:
-        word_list = list(set(w.strip().lower() for w in f.readlines() if w.strip()))
+        word_list = list({w.strip().lower() for w in f.readlines() if w.strip()})
 
     def random_word_function():
         return random.choice(word_list)
@@ -219,7 +219,7 @@ def post_inventory_distributed_query(node_key, computer_name, serial_number, uui
 
 def iter_machines(num=10):
     random_word_function = make_random_word_function()
-    for i in range(num):
+    for _ in range(num):
         yield random_word_function(), random_serial_number(), random_uuid()
 
 

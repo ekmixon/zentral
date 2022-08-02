@@ -94,16 +94,14 @@ def platform_with_os_name(os_name):
 def update_ms_tree_platform(tree):
     os_version_t = tree.get("os_version", {})
     os_name = os_version_t.get("name")
-    platform = platform_with_os_name(os_name)
-    if platform:
+    if platform := platform_with_os_name(os_name):
         tree["platform"] = platform
 
 
 def update_ms_tree_type(tree):
     system_info_t = tree.get("system_info", {})
     for attr in ("hardware_model", "hardware_serial"):
-        val = system_info_t.get(attr)
-        if val:
+        if val := system_info_t.get(attr):
             val = val.lower()
             for prefix, ms_type in HARDWARE_MODEL_SERIAL_MACHINE_TYPE_DICT.items():
                 if val.startswith(prefix):
@@ -135,44 +133,39 @@ MACOS_BUILD_RE = re.compile(r"(?P<minor>[0-9]{1,2})(?P<patch_letter>[A-Z])[1-9]+
 
 
 def macos_version_from_build(build):
-    match = MACOS_BUILD_RE.match(build)
-    if match:
-        patch = ord(match.group("patch_letter")) - 65
-        minor = int(match.group("minor")) - 4
-        if minor < 8:
-            # the patch letters are not always consecutive for older versions
-            # probably because of the different architectures.
-            raise ValueError("Cannot parse build str for macos < 10.8")
-        if minor < 12:
-            name = "OS X"
-        else:
-            name = "macOS"
-        if minor >= 17:
-            major = 12
-            minor = patch
-            patch = 0
-        elif minor >= 16:
-            major = 11
-            minor = max(0, patch - 1)
-            if build in ("20B29", "20B50", "20D74", "20D75", "20E241", "20G80"):
-                patch = 1
-            elif build in ("20D80", "20G95"):
-                patch = 2
-            elif build in ("20D91",):
-                patch = 3
-            elif build in ("20G165",):
-                minor = 6
-                patch = 0
-            else:
-                patch = 0
-        else:
-            major = 10
-        return {
-            "name": name,
-            "major": major,
-            "minor": minor,
-            "patch": patch,
-            "build": build
-        }
-    else:
+    if not (match := MACOS_BUILD_RE.match(build)):
         raise ValueError("Bad build number")
+    patch = ord(match.group("patch_letter")) - 65
+    minor = int(match.group("minor")) - 4
+    if minor < 8:
+        # the patch letters are not always consecutive for older versions
+        # probably because of the different architectures.
+        raise ValueError("Cannot parse build str for macos < 10.8")
+    name = "OS X" if minor < 12 else "macOS"
+    if minor >= 17:
+        major = 12
+        minor = patch
+        patch = 0
+    elif minor >= 16:
+        major = 11
+        minor = max(0, patch - 1)
+        if build in ("20B29", "20B50", "20D74", "20D75", "20E241", "20G80"):
+            patch = 1
+        elif build in ("20D80", "20G95"):
+            patch = 2
+        elif build in ("20D91",):
+            patch = 3
+        elif build in ("20G165",):
+            minor = 6
+            patch = 0
+        else:
+            patch = 0
+    else:
+        major = 10
+    return {
+        "name": name,
+        "major": major,
+        "minor": minor,
+        "patch": patch,
+        "build": build
+    }

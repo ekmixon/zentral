@@ -16,16 +16,18 @@ class AWSSecretClient:
         sts.get_caller_identity()
         # get region
         r = requests.put(
-            self.metadata_service_url + "api/token",
+            f"{self.metadata_service_url}api/token",
             headers={"X-aws-ec2-metadata-token-ttl-seconds": "10"},
-            timeout=.5
+            timeout=0.5,
         )
+
         r.raise_for_status()
         token = r.text.strip()
         r = requests.get(
-            self.metadata_service_url + "dynamic/instance-identity/document",
-            headers={"X-aws-ec2-metadata-token": token}
+            f"{self.metadata_service_url}dynamic/instance-identity/document",
+            headers={"X-aws-ec2-metadata-token": token},
         )
+
         r.raise_for_status()
         data = r.json()
         region = data["region"]
@@ -52,7 +54,7 @@ class GCPSecretClient:
 
     def get(self, name):
         logger.debug("Get GCP secret %s", name)
-        path = "{}/versions/{}".format(self._client.secret_path(self._project, name), "latest")
+        path = f"{self._client.secret_path(self._project, name)}/versions/latest"
         return self._client.access_secret_version(request={"name": path}).payload.data.decode("UTF-8")
 
 

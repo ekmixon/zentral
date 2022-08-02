@@ -45,10 +45,12 @@ class GroupForm(forms.ModelForm):
             Q(content_type__app_label=a, content_type__model=m) for a, m in self.default_permission_content_types
         ]
         for app_name, app_config in apps.app_configs.items():
-            permission_models = getattr(app_config, "permission_models", None)
-            if permission_models:
-                for model in permission_models:
-                    content_type_filters.append(Q(content_type__app_label=app_name, content_type__model=model))
+            if permission_models := getattr(app_config, "permission_models", None):
+                content_type_filters.extend(
+                    Q(content_type__app_label=app_name, content_type__model=model)
+                    for model in permission_models
+                )
+
         content_types_filter = functools.reduce(
             operator.or_,
             content_type_filters
@@ -123,9 +125,8 @@ class ServiceAccountForm(forms.ModelForm):
         fields = ("username", "groups")
 
     def clean(self):
-        username = self.cleaned_data.get("username")
-        if username:
-            email = "{}@{}".format(username, zentral_settings["api"]["fqdn"])
+        if username := self.cleaned_data.get("username"):
+            email = f'{username}@{zentral_settings["api"]["fqdn"]}'
             user_qs = User.objects.filter(Q(username=username) | Q(email=email))
             if self.instance.pk:
                 user_qs = user_qs.exclude(pk=self.instance.pk)
@@ -206,9 +207,13 @@ class BaseVerifyForm(forms.Form):
         super().__init__(*args, **kwargs)
 
     def get_alternative_verification_links(self):
-        return set((vd.get_verification_url(), "Use a {} device".format(vd.TYPE))
-                   for vd in self.user.get_prioritized_verification_devices(self.user_agent)
-                   if vd.TYPE != self.device_type)
+        return {
+            (vd.get_verification_url(), f"Use a {vd.TYPE} device")
+            for vd in self.user.get_prioritized_verification_devices(
+                self.user_agent
+            )
+            if vd.TYPE != self.device_type
+        }
 
 
 class VerifyTOTPForm(BaseVerifyForm):
@@ -232,8 +237,7 @@ class VerifyU2FForm(BaseVerifyForm):
     token_response = forms.CharField(required=True)
 
     def set_u2f_challenge(self):
-        user_devices = [ud.device for ud in self.user.useru2f_set.all()]
-        if user_devices:
+        if user_devices := [ud.device for ud in self.user.useru2f_set.all()]:
             authentication_request = begin_authentication(zentral_settings["api"]["tls_hostname"], user_devices)
             u2f_challenge = self.session["u2f_challenge"] = dict(authentication_request)
             return u2f_challenge

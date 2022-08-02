@@ -92,10 +92,7 @@ class Resolver:
 
         # get value
         value = getter()
-        if ttl:
-            expiry = time.time() + ttl
-        else:
-            expiry = None
+        expiry = time.time() + ttl if ttl else None
         self._cache[key] = (expiry, value)
         logger.debug("Set cache for key %s", key)
 
@@ -183,16 +180,12 @@ class BaseConfig:
         elif isinstance(value, list):
             value = self.custom_classes.get(new_path, ConfigList)(value, new_path)
         elif isinstance(value, str):
-            match = self.PROXY_VAR_RE.match(value)
-            if match:
+            if match := self.PROXY_VAR_RE.match(value):
                 value = self._make_proxy(key, match)
         return value
 
     def _to_python(self, value):
-        if isinstance(value, Proxy):
-            return value.get()
-        else:
-            return value
+        return value.get() if isinstance(value, Proxy) else value
 
     def __len__(self):
         return len(self._collection)
@@ -213,9 +206,10 @@ class BaseConfig:
 class ConfigList(BaseConfig):
     def __init__(self, config_l, path=None, resolver=None):
         super().__init__(path=path, resolver=resolver)
-        self._collection = []
-        for key, value in enumerate(config_l):
-            self._collection.append(self._from_python(str(key), value))
+        self._collection = [
+            self._from_python(str(key), value)
+            for key, value in enumerate(config_l)
+        ]
 
     def __getitem__(self, key):
         value = self._collection[key]
@@ -293,10 +287,7 @@ class ConfigDict(BaseConfig):
     def update(self, *args, **kwargs):
         chain = []
         for arg in args:
-            if isinstance(arg, dict):
-                iterator = arg.items()
-            else:
-                iterator = arg
+            iterator = arg.items() if isinstance(arg, dict) else arg
             chain = itertools.chain(chain, iterator)
         if kwargs:
             chain = itertools.chain(chain, kwargs.items())

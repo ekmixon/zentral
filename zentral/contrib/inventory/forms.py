@@ -140,11 +140,9 @@ class AddTagForm(forms.Form):
         tag = self.cleaned_data['existing_tag']
         if not tag:
             kwargs = {'name': self.cleaned_data.get('new_tag_name')}
-            meta_business_unit = self._get_mbu()
-            if meta_business_unit:
+            if meta_business_unit := self._get_mbu():
                 kwargs['meta_business_unit'] = meta_business_unit
-            new_tag_color = self.cleaned_data.get('new_tag_color')
-            if new_tag_color:
+            if new_tag_color := self.cleaned_data.get('new_tag_color'):
                 kwargs['color'] = new_tag_color
             tag = Tag(**kwargs)
             tag.save()
@@ -215,20 +213,19 @@ class MacOSAppSearchForm(forms.Form):
     def get_header_label_and_link(self, attr, label):
         reversed_order_mapping = {v: k for k, v in self.order_mapping.items()}
         link = None
-        attr_abv = reversed_order_mapping.get(attr)
-        if attr_abv:
+        if attr_abv := reversed_order_mapping.get(attr):
             order_attr, order_dir = self._get_current_order()
             if order_attr == attr:
-                label = "{} {}".format("↑" if order_dir == "ASC" else "↓", label)
+                label = f'{"↑" if order_dir == "ASC" else "↓"} {label}'
                 # reverse order link
-                order = "{}-{}".format(attr_abv, "d" if order_dir == "ASC" else "a")
+                order = f'{attr_abv}-{"d" if order_dir == "ASC" else "a"}'
             else:
                 # ASC order link
                 order = f"{attr_abv}-a"
             qd = QueryDict(mutable=True)
             qd.update({k: v for k, v in self.data.items() if v})
             qd["order"] = order
-            link = "?{}".format(qd.urlencode())
+            link = f"?{qd.urlencode()}"
         return label, link
 
     def iter_results(self, page=None, limit=None):
@@ -243,18 +240,14 @@ class MacOSAppSearchForm(forms.Form):
                  "JOIN inventory_currentmachinesnapshot AS cms ON (si.machinesnapshot_id = cms.machine_snapshot_id) "
                  "JOIN inventory_source AS src ON (cms.source_id = src.id)")
         wheres = []
-        # bundle name
-        bundle_name = self.cleaned_data['bundle_name']
-        if bundle_name:
+        if bundle_name := self.cleaned_data['bundle_name']:
             args.append(bundle_name)
             wheres.append("a.bundle_name ~* %s")
-        # source
-        source = self.cleaned_data['source']
-        if source:
+        if source := self.cleaned_data['source']:
             args.append(source.id)
             wheres.append("src.id = %s")
         if wheres:
-            query = "{} WHERE {}".format(query, " AND ".join(f"({w})" for w in wheres))
+            query = f'{query} WHERE {" AND ".join((f"({w})" for w in wheres))}'
         # ordering
         order_attr, order_dir = self._get_current_order()
         order_str = f"{order_attr} {order_dir}"
@@ -285,14 +278,8 @@ class MacOSAppSearchForm(forms.Form):
         page = max(1, page)
         limit = max(1, limit)
         results = list(self.iter_results(page, limit))
-        if self.full_count > page * limit:
-            next_page = page + 1
-        else:
-            next_page = None
-        if page > 1:
-            previous_page = page - 1
-        else:
-            previous_page = None
+        next_page = page + 1 if self.full_count > page * limit else None
+        previous_page = page - 1 if page > 1 else None
         total_pages, rest = divmod(self.full_count, limit)
         if rest or total_pages == 0:
             total_pages += 1
@@ -333,17 +320,18 @@ class EnrollmentSecretForm(forms.ModelForm):
 
     def clean(self):
         super().clean()
-        meta_business_unit = self.cleaned_data["meta_business_unit"] or self.meta_business_unit
-        if meta_business_unit:
+        if (
+            meta_business_unit := self.cleaned_data["meta_business_unit"]
+            or self.meta_business_unit
+        ):
             tag_set = set(self.cleaned_data['tags'])
-            wrong_tag_set = tag_set - set(Tag.objects.available_for_meta_business_unit(meta_business_unit))
-            if wrong_tag_set:
+            if wrong_tag_set := tag_set - set(
+                Tag.objects.available_for_meta_business_unit(meta_business_unit)
+            ):
                 raise forms.ValidationError(
-                    "Tag{} {} not available for this business unit".format(
-                        "" if len(wrong_tag_set) == 1 else "s",
-                        ", ".join(str(t) for t in wrong_tag_set)
-                    )
+                    f'Tag{"" if len(wrong_tag_set) == 1 else "s"} {", ".join((str(t) for t in wrong_tag_set))} not available for this business unit'
                 )
+
         return self.cleaned_data
 
     def save(self, *args, **kwargs):

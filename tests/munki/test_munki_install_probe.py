@@ -59,7 +59,7 @@ class MunkiInstallProbeTestCase(TestCase):
         ps, p = self.create_probe(install_types=["install"])
         self.assertEqual(len(p.metadata_filters), 1)
         mf = p.metadata_filters[0]
-        self.assertEqual(mf.event_types, set(["munki_event"]))
+        self.assertEqual(mf.event_types, {"munki_event"})
         self.assertEqual(len(mf.event_tags), 0)
 
     def test_probe_source(self):
@@ -71,7 +71,9 @@ class MunkiInstallProbeTestCase(TestCase):
         self.assertEqual(len(p.payload_filters), 1)
         pf = p.payload_filters[0]
         self.assertEqual(len(pf.items), 1)
-        self.assertEqual(pf.items[0], ("type", PayloadFilter.IN, set(["removal", "install"])))
+        self.assertEqual(
+            pf.items[0], ("type", PayloadFilter.IN, {"removal", "install"})
+        )
 
     def test_events_batch_1(self):
         ps, p = self.create_probe(install_types=["install"])

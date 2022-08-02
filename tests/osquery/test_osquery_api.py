@@ -150,9 +150,11 @@ class OsqueryAPIViewsTestCase(TestCase):
     # utiliy methods
 
     def post_as_json(self, url_name, data):
-        return self.client.post(reverse("osquery:{}".format(url_name)),
-                                json.dumps(data),
-                                content_type="application/json")
+        return self.client.post(
+            reverse(f"osquery:{url_name}"),
+            json.dumps(data),
+            content_type="application/json",
+        )
 
     def force_enrolled_machine(self, osquery_version="1.2.3", platform_mask=21):
         return EnrolledMachine.objects.create(
@@ -172,9 +174,7 @@ class OsqueryAPIViewsTestCase(TestCase):
             qs = LINUX_INVENTORY_QUERY_SNAPSHOT
         snapshot = list(qs)
         if with_app:
-            snapshot.append(OSX_APP_INSTANCE)
-            snapshot.append(WIN_PROGRAM_INSTANCE)
-            snapshot.append(DEB_PACKAGE)
+            snapshot.extend((OSX_APP_INSTANCE, WIN_PROGRAM_INSTANCE, DEB_PACKAGE))
         if with_azure_ad:
             snapshot.extend(AZURE_AD_INFO_TUPLES)
         return self.post_as_json(

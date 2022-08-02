@@ -17,8 +17,8 @@ def parse(data):
 
     # subject
     subject = info["subject"]
-    for rdn_idx, rdn in enumerate(subject.chosen):
-        for type_val_idx, type_val in enumerate(rdn):
+    for rdn in subject.chosen:
+        for type_val in rdn:
             d[type_val["type"].native] = type_val['value'].native
 
     # attributes
@@ -35,7 +35,7 @@ def enrollment_secret_verification_dict(data):
 
 def url(csr_d):
     path = base64.b64decode(csr_d["challenge_password"].encode("ascii")).decode("utf-8")
-    return "{}{}".format(os.environ["ZENTRAL_API_BASE_URL"].rstrip("/"), path)
+    return f'{os.environ["ZENTRAL_API_BASE_URL"].rstrip("/")}{path}'
 
 
 def post_verification_d(url, v_d):

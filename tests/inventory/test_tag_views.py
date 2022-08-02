@@ -85,7 +85,7 @@ class MacOSAppsViewsTestCase(TestCase):
         self.assertFormError(response, "form", "name", "A tag with this name already exists.")
 
     def test_create_tag_post_conflicting_slug(self):
-        tag = self._force_tag(get_random_string() + " " + get_random_string())
+        tag = self._force_tag(f"{get_random_string()} {get_random_string()}")
         self._login("inventory.add_tag")
         response = self.client.post(reverse("inventory:create_tag"),
                                     {"name": tag.name.replace(" ", "-")})
@@ -136,7 +136,7 @@ class MacOSAppsViewsTestCase(TestCase):
         self.assertFormError(response, "form", "name", "A tag with this name already exists.")
 
     def test_update_tag_post_conflicting_slug(self):
-        tag0 = self._force_tag(get_random_string() + " " + get_random_string())
+        tag0 = self._force_tag(f"{get_random_string()} {get_random_string()}")
         tag = self._force_tag()
         self._login("inventory.change_tag")
         response = self.client.post(reverse("inventory:update_tag", args=(tag.pk,)),

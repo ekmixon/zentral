@@ -16,16 +16,17 @@ class InventoryAPITests(APITestCase):
     def setUpTestData(cls):
         cls.user = User.objects.create_user(
             get_random_string(),
-            "{}@zentral.io".format(get_random_string()),
-            get_random_string()
+            f"{get_random_string()}@zentral.io",
+            get_random_string(),
         )
+
         cls.group = Group.objects.create(name=get_random_string())
         cls.user.groups.set([cls.group])
         cls.token, _ = Token.objects.get_or_create(user=cls.user)
 
     def setUp(self):
         super().setUp()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
 
     def _set_permissions(self, *permissions):
         if permissions:

@@ -18,10 +18,7 @@ register_event_type(TestEvent2)
 
 
 def make_event(idx=0, first_type=True, with_request=True):
-    if first_type:
-        event_cls = TestEvent1
-    else:
-        event_cls = TestEvent2
+    event_cls = TestEvent1 if first_type else TestEvent2
     if with_request:
         request = EventRequest("python_unittest_useragent",
                                "10.0.0.1",

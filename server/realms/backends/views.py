@@ -16,8 +16,7 @@ def finalize_session(session, request, realm_user, expires_at=None):
     session.user = realm_user
     session.expires_at = expires_at
     session.save()
-    callback_function = session.get_callback_function()
-    if callback_function:
+    if callback_function := session.get_callback_function():
         response = None
         try:
             response = callback_function(request=request,
@@ -39,8 +38,7 @@ def ras_finalization_error(request, ras, realm_user=None, exception=None):
     ctx = {"realm": ras.realm,
            "message": str(exception)}
     if isinstance(exception, RealmUserError):
-        claims = exception.claims
-        if claims:
+        if claims := exception.claims:
             ctx["original_claims"] = claims.pop("claims", {})
             ctx["claims"] = claims
     if realm_user:

@@ -23,7 +23,7 @@ class MenuConfig:
         for app_name in settings.INSTALLED_APPS:
             app_shortname = app_name.rsplit('.', 1)[-1]
             try:
-                url_module = import_module('{}.urls'.format(app_name))
+                url_module = import_module(f'{app_name}.urls')
             except ModuleNotFoundError:
                 continue
             menu_cfg = getattr(url_module, config_attr, None)
@@ -59,9 +59,7 @@ class MenuConfig:
     @staticmethod
     def _iter_section_links(context, section):
         yield from section["link_list"]
-        # TODO Legacy. Only used for the creation links for the probes, set with a context processor
-        extra_links_context_keys = section['extra_links_context_keys']
-        if extra_links_context_keys:
+        if extra_links_context_keys := section['extra_links_context_keys']:
             if "_cached_extra_context_links" not in section:
                 cached_extra_context_links = section.setdefault("_cached_extra_context_links", [])
                 for context_key in section.get('extra_links_context_keys', []):

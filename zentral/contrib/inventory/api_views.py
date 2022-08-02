@@ -43,21 +43,16 @@ class UpdateMachineTags(APIView):
     def _iter_serial_numbers(self):
         args = []
         wheres = []
-        principal_names = self.data["principal_users"].get("principal_names", [])
-        if principal_names:
+        if principal_names := self.data["principal_users"].get(
+            "principal_names", []
+        ):
             args.append(tuple(principal_names))
             wheres.append("pu.principal_name IN %s")
-        unique_ids = self.data["principal_users"].get("unique_ids", [])
-        if unique_ids:
+        if unique_ids := self.data["principal_users"].get("unique_ids", []):
             args.append(tuple(unique_ids))
             wheres.append("pu.unique_id IN %s")
-        query = (
-            "select ms.serial_number "
-            "from inventory_machinesnapshot as ms "
-            "join inventory_currentmachinesnapshot as cms on (cms.machine_snapshot_id = ms.id) "
-            "join inventory_principaluser as pu on (pu.id = ms.principal_user_id) "
-            "where {}"
-        ).format(" or ".join(wheres))
+        query = f'select ms.serial_number from inventory_machinesnapshot as ms join inventory_currentmachinesnapshot as cms on (cms.machine_snapshot_id = ms.id) join inventory_principaluser as pu on (pu.id = ms.principal_user_id) where {" or ".join(wheres)}'
+
         cursor = connection.cursor()
         cursor.execute(query, args)
         for t in cursor.fetchall():

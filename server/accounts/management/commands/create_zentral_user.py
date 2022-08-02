@@ -56,7 +56,10 @@ class Command(BaseCommand):
             pass
         else:
             if user.email != email:
-                self.exit_with_error("user {} exists with a different email: {}".format(username, user.email))
+                self.exit_with_error(
+                    f"user {username} exists with a different email: {user.email}"
+                )
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -64,8 +67,9 @@ class Command(BaseCommand):
         else:
             if user.username != username:
                 self.exit_with_error(
-                    "user with email {} exists with a different username: {}".format(email, user.username)
+                    f"user with email {email} exists with a different username: {user.username}"
                 )
+
         created = updated = False
         if not user:
             user = User.objects.create_user(username, email,
@@ -76,7 +80,10 @@ class Command(BaseCommand):
                 print("Superuser" if superuser else "User", username, email, "created")
         else:
             if kwargs.get("skip_if_existing"):
-                self.exit_with_error("User {} already exists. Nothing to do.".format(username), exit_code=0)
+                self.exit_with_error(
+                    f"User {username} already exists. Nothing to do.", exit_code=0
+                )
+
             if user.is_superuser != superuser:
                 updated = True
                 user.is_superuser = superuser

@@ -73,7 +73,11 @@ class SAMLRealmForm(RealmForm):
             client = Saml2Client(config=sp_config)
             client.prepare_for_authenticate(relay_state=str(uuid.uuid4()))
         except Exception as e:
-            self.add_error("metadata_file", forms.ValidationError("{}: {}".format(e.__class__.__name__, str(e))))
+            self.add_error(
+                "metadata_file",
+                forms.ValidationError(f"{e.__class__.__name__}: {str(e)}"),
+            )
+
         else:
             cleaned_data["idp_metadata"] = idp_metadata
 
@@ -86,10 +90,10 @@ class SAMLRealmForm(RealmForm):
             idp_metadata = self.instance.config.get("idp_metadata")
         if idp_metadata:
             config["idp_metadata"] = idp_metadata
-        if self.cleaned_data.get("allow_idp_initiated_login"):
-            config["allow_idp_initiated_login"] = True
-        else:
-            config["allow_idp_initiated_login"] = False
+        config["allow_idp_initiated_login"] = bool(
+            self.cleaned_data.get("allow_idp_initiated_login")
+        )
+
         default_relay_state = None
         if self.instance:
             default_relay_state = self.instance.config.get("default_relay_state")

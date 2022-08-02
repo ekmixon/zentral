@@ -17,9 +17,10 @@ class APIViewsTestCase(TestCase):
     def setUpTestData(cls):
         cls.service_account = User.objects.create(
             username=get_random_string(),
-            email="{}@zentral.io".format(get_random_string()),
-            is_service_account=True
+            email=f"{get_random_string()}@zentral.io",
+            is_service_account=True,
         )
+
         cls.group = Group.objects.create(name=get_random_string())
         cls.service_account.groups.set([cls.group])
         Token.objects.get_or_create(user=cls.service_account)

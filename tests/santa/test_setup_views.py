@@ -91,9 +91,11 @@ class SantaSetupViewsTestCase(TestCase):
         self.client.force_login(self.user)
 
     def post_as_json(self, url_name, data):
-        return self.client.post(reverse("santa:{}".format(url_name)),
-                                json.dumps(data),
-                                content_type="application/json")
+        return self.client.post(
+            reverse(f"santa:{url_name}"),
+            json.dumps(data),
+            content_type="application/json",
+        )
 
     def test_configurations_redirect(self):
         self.login_redirect(reverse("santa:configuration_list"))
@@ -179,7 +181,7 @@ class SantaSetupViewsTestCase(TestCase):
         self.assertContains(response, configuration.name)
 
     def create_enrollment(self, configuration, no_assertions=False):
-        mbu = MetaBusinessUnit.objects.create(name="{} MBU".format(configuration.name))
+        mbu = MetaBusinessUnit.objects.create(name=f"{configuration.name} MBU")
         mbu.create_enrollment_business_unit()
         response = self.client.post(reverse("santa:create_enrollment", args=(configuration.pk,)),
                                     {"secret-meta_business_unit": mbu.pk,
@@ -351,8 +353,8 @@ class SantaSetupViewsTestCase(TestCase):
         rule = response.context["object_list"][0]
         # update
         custom_message = get_random_string()
-        serial_numbers = [get_random_string() for i in range(3)]
-        primary_users = [get_random_string() for i in range(12)]
+        serial_numbers = [get_random_string() for _ in range(3)]
+        primary_users = [get_random_string() for _ in range(12)]
         response = self.client.post(reverse("santa:update_configuration_rule", args=(configuration.pk, rule.pk)),
                                     {"target_type": Target.BINARY,
                                      "target_sha256": binary_hash,

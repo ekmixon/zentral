@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
+
 import os
 from django.core.management import utils
 # Import the zentral settings (base.json)
@@ -31,11 +32,9 @@ DEBUG = django_zentral_settings.get('DEBUG', False)
 
 ALLOWED_HOSTS = django_zentral_settings.get('ALLOWED_HOSTS', [])
 if not ALLOWED_HOSTS:
-    fqdn = zentral_settings.get("api", {}).get("fqdn")
-    if fqdn:
+    if fqdn := zentral_settings.get("api", {}).get("fqdn"):
         ALLOWED_HOSTS.append(fqdn)
-    fqdn_mtls = zentral_settings.get("api", {}).get("fqdn_mtls")
-    if fqdn_mtls:
+    if fqdn_mtls := zentral_settings.get("api", {}).get("fqdn_mtls"):
         ALLOWED_HOSTS.append(fqdn_mtls)
 
 if "CACHES" in django_zentral_settings:
@@ -117,9 +116,7 @@ MAX_PASSWORD_AGE_DAYS = django_zentral_settings.get("MAX_PASSWORD_AGE_DAYS", Non
 LOGIN_REDIRECT_URL = '/'
 
 # add the zentral apps
-for app_name in zentral_settings.get('apps', []):
-    INSTALLED_APPS.append(app_name)
-
+INSTALLED_APPS.extend(iter(zentral_settings.get('apps', [])))
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -170,14 +167,9 @@ DATABASES = {
         'CONN_MAX_AGE': 3600
     }
 }
-for key, default in (('HOST', None),
-                     ('PORT', None),
-                     ('NAME', 'zentral'),
-                     ('USER', 'zentral'),
-                     ('PASSWORD', None),):
-    config_key = 'POSTGRES_{}'.format(key)
-    val = django_zentral_settings.get(config_key, default)
-    if val:
+for key, default in (('HOST', None), ('PORT', None), ('NAME', 'zentral'), ('USER', 'zentral'), ('PASSWORD', None)):
+    config_key = f'POSTGRES_{key}'
+    if val := django_zentral_settings.get(config_key, default):
         DATABASES['default'][key] = val
 
 CELERY_RESULT_BACKEND = 'django-db'
@@ -204,10 +196,7 @@ USE_TZ = False
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
-if DEBUG:
-    STATIC_URL = '/static_debug/'
-else:
-    STATIC_URL = '/static/'
+STATIC_URL = '/static_debug/' if DEBUG else '/static/'
 STATIC_ROOT = django_zentral_settings.get("STATIC_ROOT", "/zentral_static")
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
@@ -238,26 +227,17 @@ if "AWS_STORAGE_BUCKET_NAME" in django_zentral_settings:
     AWS_STORAGE_BUCKET_NAME = django_zentral_settings["AWS_STORAGE_BUCKET_NAME"]
 
 
-# LOGGING
-# everything in the console.
-
-
-log_formatter = django_zentral_settings.get("LOG_FORMATTER")
-if log_formatter:
+if log_formatter := django_zentral_settings.get("LOG_FORMATTER"):
     log_formatter_dict = {'()': log_formatter}
 else:
     log_asctime = django_zentral_settings.get("LOG_ASCTIME", True)
     log_formatter_dict = {
-        'format': '{}PID%(process)d %(module)s %(levelname)s %(message)s'.format('%(asctime)s ' if log_asctime else '')
+        'format': f"{'%(asctime)s ' if log_asctime else ''}PID%(process)d %(module)s %(levelname)s %(message)s"
     }
 
 
-if DEBUG:
-    log_level = "DEBUG"
-else:
-    log_level = "INFO"
 
-
+log_level = "DEBUG" if DEBUG else "INFO"
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,

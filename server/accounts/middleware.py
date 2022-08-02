@@ -9,9 +9,12 @@ from django.utils import timezone
 def force_password_change_middleware(get_response):
     max_password_age = timedelta(days=getattr(settings, "MAX_PASSWORD_AGE_DAYS", 30))
     password_change_url = reverse("password_change")
-    ok_url = set([password_change_url,
-                  reverse("logout"),
-                  reverse("accounts:nginx_auth_request")])  # TODO: VERIFY
+    ok_url = {
+        password_change_url,
+        reverse("logout"),
+        reverse("accounts:nginx_auth_request"),
+    }
+
 
     def middleware(request):
         user = request.user

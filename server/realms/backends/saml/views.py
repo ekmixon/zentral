@@ -80,37 +80,34 @@ class AssertionConsumerServiceView(BaseSPView):
                 raise PermissionDenied("Unknown relay state")
             if ras.user:
                 raise PermissionDenied("Realm authorization session already used")
-            request_id = None
-            if ras.backend_state:
-                request_id = ras.backend_state.get("request_id")
+            request_id = ras.backend_state.get("request_id") if ras.backend_state else None
             if not request_id:
                 raise PermissionDenied("Missing request ID in auth session")
-            if request_id != in_response_to:
+            if request_id == in_response_to:
+                logger.debug(f"SAML request ID = InResponseTo = {request_id}")
+            else:
                 logger.error("SAML request ID %s != InResponseTo %s", request_id, in_response_to)
                 raise PermissionDenied("Unsolicited response")
-            else:
-                logger.debug("SAML request ID = InResponseTo = {}".format(request_id))
-            logger.info("Allow SAML response on realm '{}' {}".format(
-                self.realm, self.realm.pk
-            ))
+            logger.info(f"Allow SAML response on realm '{self.realm}' {self.realm.pk}")
+        elif self.backend_instance.allow_idp_initiated_login:
+            logger.info(
+                f"Allow unsolicited SAML response on realm '{self.realm}' {self.realm.pk} for login"
+            )
+
+            # IdP-initiated login
+            # create an on the fly auth session
+            ras = RealmAuthenticationSession.objects.create(
+                realm=self.realm,
+                callback="realms.utils.login_callback"
+            )
         else:
-            if self.backend_instance.allow_idp_initiated_login:
-                logger.info("Allow unsolicited SAML response on realm '{}' {} for login".format(
-                    self.realm, self.realm.pk
-                ))
-                # IdP-initiated login
-                # create an on the fly auth session
-                ras = RealmAuthenticationSession.objects.create(
-                    realm=self.realm,
-                    callback="realms.utils.login_callback"
-                )
-            else:
-                logger.info("Unsolicited SAML response on realm '{}' {} redirected to SP initiated login".format(
-                    self.realm, self.realm.pk
-                ))
+            logger.info(
+                f"Unsolicited SAML response on realm '{self.realm}' {self.realm.pk} redirected to SP initiated login"
+            )
+
                 # redirect to SP-initiated login
-                redirect_url = "{}?realm={}".format(reverse("login"), self.realm.pk)
-                return HttpResponseRedirect(redirect_url)
+            redirect_url = f'{reverse("login")}?realm={self.realm.pk}'
+            return HttpResponseRedirect(redirect_url)
 
         try:
             realm_user = self.backend_instance.update_or_create_realm_user(session_info)
@@ -120,8 +117,7 @@ class AssertionConsumerServiceView(BaseSPView):
 
         # session NotOnOrAfter
         expires_at = None
-        nooa = session_info.get("not_on_or_after")
-        if nooa:
+        if nooa := session_info.get("not_on_or_after"):
             if isinstance(nooa, int):
                 try:
                     expires_at = datetime.fromtimestamp(nooa)

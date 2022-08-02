@@ -38,7 +38,7 @@ class Enrollment(BaseEnrollment):
     filebeat_release = models.CharField(max_length=64, blank=True, null=True)
 
     def get_description_for_distributor(self):
-        return "Filebeat configuration: {}".format(self.configuration)
+        return f"Filebeat configuration: {self.configuration}"
 
     def serialize_for_event(self):
         enrollment_dict = super().serialize_for_event()
@@ -110,10 +110,10 @@ class EnrollmentSession(models.Model):
         }
 
     def get_common_name(self):
-        return "{}${}".format("FLBT", self.enrollment_secret.secret)
+        return f"FLBT${self.enrollment_secret.secret}"
 
     def get_organization(self):
-        return "MBU${}".format(self.enrollment_secret.meta_business_unit.pk)
+        return f"MBU${self.enrollment_secret.meta_business_unit.pk}"
 
     def get_challenge(self):
         path = reverse("filebeat:verify_scep_csr")

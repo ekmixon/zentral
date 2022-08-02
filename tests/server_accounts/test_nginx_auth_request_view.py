@@ -39,8 +39,7 @@ class NginxAuthRequestViewTestCase(TestCase):
     def _make_request(self, original_uri, logged_in=False, **headers):
         if logged_in:
             self.client.force_login(self.user)
-        kwargs = {"HTTP_X_ORIGINAL_URI": original_uri}
-        kwargs.update(headers)
+        kwargs = {"HTTP_X_ORIGINAL_URI": original_uri} | headers
         return self.client.get(reverse("accounts:nginx_auth_request"), **kwargs)
 
     # tests

@@ -6,7 +6,7 @@ class BaseBackend:
 
     @property
     def _ras_session_key(self):
-        return "realm_{}_session".format(self.instance.pk)
+        return f"realm_{self.instance.pk}_session"
 
     def _add_ras_to_session(self, request, ras):
         request.session[self._ras_session_key] = str(ras.pk)

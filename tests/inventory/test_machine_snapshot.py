@@ -261,10 +261,13 @@ class MachineSnapshotTestCase(TestCase):
         last_seen = datetime.utcnow() - timedelta(seconds=age)
         tree["last_seen"] = last_seen
         msc, ms = MachineSnapshotCommit.objects.commit_machine_snapshot_tree(tree)
-        mm = MetaMachine(self.serial_number + "e12908e1209")
+        mm = MetaMachine(f"{self.serial_number}e12908e1209")
         self.assertFalse(mm.has_recent_source_snapshot(module, max_age=2*age))
         mm = MetaMachine(self.serial_number)
-        self.assertFalse(mm.has_recent_source_snapshot(module + "lkjdelkwd", max_age=2*age))
+        self.assertFalse(
+            mm.has_recent_source_snapshot(f"{module}lkjdelkwd", max_age=2 * age)
+        )
+
         self.assertFalse(mm.has_recent_source_snapshot(module))
         self.assertTrue(mm.has_recent_source_snapshot(module, max_age=2*age))
         mm.archive()
@@ -299,8 +302,11 @@ class MachineSnapshotTestCase(TestCase):
         mm = MetaMachine(self.serial_number)
         self.assertEqual((MACOS, None, {self.meta_business_unit.id}, {tag1.id, tag2.id}),
                          mm.cached_probe_filtering_values)
-        self.assertEqual((MACOS, None, {self.meta_business_unit.id}, {tag1.id, tag2.id}),
-                         cache.get("mm-probe-fvs_{}".format(mm.get_urlsafe_serial_number())))
+        self.assertEqual(
+            (MACOS, None, {self.meta_business_unit.id}, {tag1.id, tag2.id}),
+            cache.get(f"mm-probe-fvs_{mm.get_urlsafe_serial_number()}"),
+        )
+
 
         mm.archive()
 

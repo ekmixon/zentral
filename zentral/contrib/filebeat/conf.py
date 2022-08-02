@@ -14,7 +14,7 @@ class AvailableInputs(object):
             self._inputs = OrderedDict()
             for app in settings['apps']:
                 try:
-                    filebeat_module = import_module("{}.filebeat".format(app))
+                    filebeat_module = import_module(f"{app}.filebeat")
                 except ImportError:
                     pass
                 else:
@@ -24,10 +24,7 @@ class AvailableInputs(object):
         self._load()
         for app, app_inputs in self._inputs.items():
             for input_key, input_d in app_inputs.items():
-                yield (app,
-                       "{}.{}".format(app, input_key),  # unique prefix
-                       input_d["name"],
-                       input_d["form_class"])
+                yield (app, f"{app}.{input_key}", input_d["name"], input_d["form_class"])
 
     def forms_for_context(self, inputs=None):
         input_forms = OrderedDict()
@@ -36,9 +33,7 @@ class AvailableInputs(object):
                 input_forms[app] = {"name": app.split(".")[-1].replace("_", " ").title(),
                                     "forms": OrderedDict()}
             if inputs and prefix in inputs:
-                data = {}
-                for k, v in inputs[prefix].items():
-                    data["{}-{}".format(prefix, k)] = v
+                data = {f"{prefix}-{k}": v for k, v in inputs[prefix].items()}
             else:
                 data = None
             input_forms[app]["forms"][prefix] = {"name": name,
@@ -95,7 +90,9 @@ def build_filebeat_yml(configuration, certificate=None, key=None, certificate_au
     fb_cfg = {
         "output": {
             "logstash": {
-                "hosts": ["{}:5044".format(urlparse(settings["api"]["tls_hostname"]).netloc)],
+                "hosts": [
+                    f'{urlparse(settings["api"]["tls_hostname"]).netloc}:5044'
+                ],
                 "ssl": ssl,
             }
         },
@@ -103,11 +100,9 @@ def build_filebeat_yml(configuration, certificate=None, key=None, certificate_au
             {"add_host_metadata": None},
             {"add_cloud_metadata": None},
         ],
-        "filebeat": {
-            "inputs": [
-            ]
-        }
+        "filebeat": {"inputs": []},
     }
+
 
     # include tls certs?
     if settings["api"].get("distribute_tls_server_certs", True) and certificate_authority:

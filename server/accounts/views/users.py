@@ -71,7 +71,7 @@ class UserView(PermissionRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["title"] = "{} {}".format(self.object.get_type_display().title(), self.object)
+        ctx["title"] = f"{self.object.get_type_display().title()} {self.object}"
         groups = self.object.groups.all().order_by(Lower("name"))
         ctx["groups"] = groups
         ctx["group_count"] = groups.count()
@@ -96,11 +96,10 @@ class CreateUserAPITokenView(LoginRequiredMixin, View):
         ):
             raise PermissionDenied("Not allowed")
         _, created = Token.objects.get_or_create(user=user)
-        if not created:
-            messages.warning(request, "User already has an API token")
-            return redirect(user)
-        else:
+        if created:
             return redirect("accounts:user_api_token", signing.dumps({"uid": user.pk, "aud": "api_token"}))
+        messages.warning(request, "User already has an API token")
+        return redirect(user)
 
 
 class UserAPITokenView(LoginRequiredMixin, DetailView):
@@ -126,7 +125,7 @@ class UserAPITokenView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["title"] = "{} API token".format(self.object.get_type_display().title())
+        ctx["title"] = f"{self.object.get_type_display().title()} API token"
         return ctx
 
 
@@ -169,14 +168,11 @@ class UpdateUserView(PermissionRequiredMixin, UpdateView):
     context_object_name = "user_to_update"
 
     def get_form_class(self):
-        if self.object.is_service_account:
-            return ServiceAccountForm
-        else:
-            return UpdateUserForm
+        return ServiceAccountForm if self.object.is_service_account else UpdateUserForm
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["title"] = "Update {} {}".format(self.object.get_type_display(), self.object)
+        ctx["title"] = f"Update {self.object.get_type_display()} {self.object}"
         return ctx
 
     def form_valid(self, form):
@@ -197,21 +193,23 @@ class DeleteUserView(PermissionRequiredMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.user = get_object_or_404(User, pk=kwargs["pk"])
-        if not self.user.deletable():
-            return redirect("accounts:users")
-        return super().dispatch(request, *args, **kwargs)
+        return (
+            super().dispatch(request, *args, **kwargs)
+            if self.user.deletable()
+            else redirect("accounts:users")
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["user_to_delete"] = self.user
-        ctx["title"] = "Delete {}".format(self.user.get_type_display())
+        ctx["title"] = f"Delete {self.user.get_type_display()}"
         return ctx
 
     def post(self, request, *args, **kwargs):
         if self.user.is_service_account:
-            msg = "Service account {} deleted".format(self.user)
+            msg = f"Service account {self.user} deleted"
         else:
-            msg = "User {} deleted".format(self.user)
+            msg = f"User {self.user} deleted"
         self.user.delete()
         messages.info(request, msg)
         return redirect("accounts:users")

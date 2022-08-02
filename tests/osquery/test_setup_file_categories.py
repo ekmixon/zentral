@@ -40,7 +40,7 @@ class OsquerySetupFileCategoriesViewsTestCase(TestCase):
     def _force_file_category(self):
         return FileCategory.objects.create(
             name=get_random_string(),
-            file_paths=[get_random_string(16) for i in range(3)]
+            file_paths=[get_random_string(16) for _ in range(3)],
         )
 
     # create file_category

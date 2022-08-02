@@ -40,8 +40,7 @@ class Realm(models.Model):
     @cached_property
     def backend_instance(self):
         from .backends import backend_classes
-        backend_class = backend_classes.get(self.backend)
-        if backend_class:
+        if backend_class := backend_classes.get(self.backend):
             return backend_class(self)
 
     def get_absolute_url(self):
@@ -49,7 +48,7 @@ class Realm(models.Model):
 
     def iter_user_claim_mappings(self):
         for user_claim in ("username", "email", "first_name", "last_name", "full_name"):
-            yield user_claim, getattr(self, "{}_claim".format(user_claim))
+            yield (user_claim, getattr(self, f"{user_claim}_claim"))
 
 
 class RealmUser(models.Model):
@@ -77,12 +76,12 @@ class RealmUser(models.Model):
     def get_full_name(self):
         if self.full_name:
             return self.full_name
+        if full_name := " ".join(
+            s for s in (self.first_name, self.last_name) if s
+        ):
+            return full_name
         else:
-            full_name = " ".join(s for s in (self.first_name, self.last_name) if s)
-            if full_name:
-                return full_name
-            else:
-                return self.username
+            return self.username
 
     @property
     def device_username(self):

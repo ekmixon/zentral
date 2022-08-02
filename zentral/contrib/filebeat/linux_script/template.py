@@ -63,13 +63,12 @@ def install_filebeat():
         return
     fh, fn = tempfile.mkstemp(suffix=".deb")
     of = os.fdopen(fh, "wb")
-    with urllib.request.urlopen("https://artifacts.elastic.co/downloads/beats/filebeat/"
-                                "filebeat-{}-amd64.deb".format(FILEBEAT_VERSION)) as resp:
+    with urllib.request.urlopen(f"https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-{FILEBEAT_VERSION}-amd64.deb") as resp:
         while True:
-            chunk = resp.read(64 * 2**10)
-            if not chunk:
+            if chunk := resp.read(64 * 2**10):
+                of.write(chunk)
+            else:
                 break
-            of.write(chunk)
     of.close()
     subprocess.run([
         "/usr/bin/dpkg", "-i", fn
@@ -89,21 +88,20 @@ def install_scepclient():
     tfh, tfn = tempfile.mkstemp(suffix=".zip")
     tf = os.fdopen(tfh, "wb")
     while True:
-        chunk = resp.read(64 * 2**10)
-        if not chunk:
+        if chunk := resp.read(64 * 2**10):
+            tf.write(chunk)
+        else:
             break
-        tf.write(chunk)
     tf.close()
     with zipfile.ZipFile(tfn) as zf:
         isbf = zf.open('build/scepclient-linux-amd64', 'r')
-        osbf = open(SCEPCLIENT, "wb")
-        while True:
-            chunk = isbf.read(64 * 2**10)
-            if not chunk:
-                break
-            osbf.write(chunk)
-        isbf.close()
-        osbf.close()
+        with open(SCEPCLIENT, "wb") as osbf:
+            while True:
+                if chunk := isbf.read(64 * 2**10):
+                    osbf.write(chunk)
+                else:
+                    break
+            isbf.close()
     os.unlink(tfn)
     os.chmod(SCEPCLIENT, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
@@ -113,7 +111,7 @@ def get_gce_instance_serial_number_and_uuid():
                                  headers={"Metadata-Flavor": "Google"})
     try:
         with urllib.request.urlopen(req, timeout=2) as resp:
-            return "gcp-{}".format(resp.read().decode("utf-8")), None
+            return f'gcp-{resp.read().decode("utf-8")}', None
     except urllib.error.URLError:
         return None, None
 
@@ -121,7 +119,7 @@ def get_gce_instance_serial_number_and_uuid():
 def get_dbus_serial_number_and_uuid():
     try:
         with open("/var/lib/dbus/machine-id", "r") as f:
-            return "dbus-{}".format(f.read().strip()), None
+            return f"dbus-{f.read().strip()}", None
     except IOError:
         return None, None
 
@@ -189,9 +187,9 @@ def build_csr(tmpdir, serial_number, cn, org, challenge):
     openssl_req_config = os.path.join(tmpdir, "openssl_req.cfg")
     with open(openssl_req_config, "w") as of:
         for section, section_body in cfg.items():
-            of.write("[ {} ]\n".format(section))
+            of.write(f"[ {section} ]\n")
             for key, val in section_body.items():
-                of.write("{} = {}\n".format(key, val))
+                of.write(f"{key} = {val}\n")
     csr = os.path.join(tmpdir, "csr.pem")  # expected csr file for scepclient
     subprocess.check_call([
         OPENSSL,

@@ -25,7 +25,7 @@ def export_inventory(urlencoded_query_dict, filename):
             content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             msquery.export_xlsx(of)
         else:
-            raise ValueError("Unknown file extension '{}'".format(extension))
+            raise ValueError(f"Unknown file extension '{extension}'")
     return {
         "filepath": filepath,
         "headers": {
@@ -59,8 +59,7 @@ def export_macos_apps(form_data, filename):
             workbook = xlsxwriter.Workbook(of)
             worksheet = workbook.add_worksheet("MacOS Apps")
             headers = False
-            row_idx = 0
-            for app in form.iter_results():
+            for row_idx, app in enumerate(form.iter_results()):
                 del app["id"]
                 col_idx = 0
                 if not headers:
@@ -78,10 +77,9 @@ def export_macos_apps(form_data, filename):
                                 v = ""
                             worksheet.write_string(row_idx, col_idx, v)
                         col_idx += 1
-                row_idx += 1
             workbook.close()
     else:
-        raise ValueError("Unknown file extension '{}'".format(extension))
+        raise ValueError(f"Unknown file extension '{extension}'")
     return {
         "filepath": filepath,
         "headers": {

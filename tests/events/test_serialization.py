@@ -15,10 +15,7 @@ def make_event(ip=None, ua=None, with_msn=True):
     msn = request = None
     if with_msn:
         msn = "0123456789"
-    if ip or ua:
-        request = EventRequest(user_agent=ua, ip=ip)
-    else:
-        request = None
+    request = EventRequest(user_agent=ua, ip=ip) if ip or ua else None
     return TestEvent3(EventMetadata(machine_serial_number=msn,
                                     request=request),
                       {"godzilla": "yo"})

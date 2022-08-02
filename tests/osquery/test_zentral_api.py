@@ -28,7 +28,7 @@ class OsqueryAPITests(APITestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
 
     def set_permissions(self, *permissions):
         if permissions:
@@ -175,7 +175,7 @@ class OsqueryAPITests(APITestCase):
         secret_data["id"] = 233333  # to check that there is no enrollment secret creation
         secret_data["quota"] = 23
         secret_data["request_count"] = 2331983  # to check that it cannot be updated
-        serial_numbers = [get_random_string(12) for i in range(13)]
+        serial_numbers = [get_random_string(12) for _ in range(13)]
         secret_data["serial_numbers"] = serial_numbers
         data = {"configuration": configuration9.pk,
                 "osquery_release": new_osquery_release,

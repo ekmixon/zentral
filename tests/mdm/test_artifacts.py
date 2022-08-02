@@ -126,16 +126,18 @@ class TestMDMArtifacts(TestCase):
             platforms=platforms
         )
         artifact_versions = []
-        payload_identifier = "{}.{}.{}".format(get_random_string(2), get_random_string(4), str(uuid.uuid4()))
+        payload_identifier = (
+            f"{get_random_string(2)}.{get_random_string(4)}.{str(uuid.uuid4())}"
+        )
+
         payload_identifier = None
         for version in range(version_count, 0, -1):
             artifact_version = ArtifactVersion.objects.create(artifact=artifact, version=version)
             artifact_versions.append(artifact_version)
             if artifact_type == ArtifactType.Profile:
                 if payload_identifier is None:
-                    payload_identifier = "{}.{}.{}".format(get_random_string(2),
-                                                           get_random_string(4),
-                                                           str(uuid.uuid4()).upper())
+                    payload_identifier = f"{get_random_string(2)}.{get_random_string(4)}.{str(uuid.uuid4()).upper()}"
+
                 payload_uuid = str(uuid.uuid4()).upper()
                 payload_display_name = get_random_string(16)
                 payload_description = get_random_string(32)
@@ -156,11 +158,12 @@ class TestMDMArtifacts(TestCase):
             elif artifact_type == ArtifactType.EnterpriseApp:
                 EnterpriseApp.objects.create(
                     artifact_version=artifact_version,
-                    filename="{}.pkg".format(get_random_string(17)),
-                    product_id="{}.{}.{}".format(get_random_string(2), get_random_string(4), get_random_string(8)),
+                    filename=f"{get_random_string(17)}.pkg",
+                    product_id=f"{get_random_string(2)}.{get_random_string(4)}.{get_random_string(8)}",
                     product_version="17",
-                    manifest={"version": version}
+                    manifest={"version": version},
                 )
+
         return artifact, artifact_versions
 
     def _force_blueprint_artifact(

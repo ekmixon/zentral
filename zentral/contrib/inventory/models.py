@@ -74,7 +74,7 @@ class MetaBusinessUnit(models.Model):
         return self.api_enrollment_business_units().count() > 0
 
     def create_enrollment_business_unit(self):
-        reference = "MBU{}".format(self.id)
+        reference = f"MBU{self.id}"
         b, created = BusinessUnit.objects.commit({'source': {'module': 'zentral.contrib.inventory',
                                                   'name': 'inventory'},
                                                   'reference': reference,
@@ -85,7 +85,10 @@ class MetaBusinessUnit(models.Model):
         return b
 
     def tags(self):
-        tags = list(mbut.tag for mbut in self.metabusinessunittag_set.select_related('tag'))
+        tags = [
+            mbut.tag for mbut in self.metabusinessunittag_set.select_related('tag')
+        ]
+
         tags.sort(key=lambda t: (t.meta_business_unit is None, str(t).upper()))
         return tags
 
@@ -96,19 +99,17 @@ class MetaBusinessUnit(models.Model):
     def can_be_deleted(self):
         for related_objects in find_all_related_objects(self):
             if related_objects.objects_count:
-                if related_objects.name == "businessunit":
-                    # OK to delete if all the business units can be deleted
-                    for bu in related_objects.objects:
-                        if not bu.can_be_deleted():
-                            return False
-                    continue
-                else:
+                if related_objects.name != "businessunit":
                     return False
+                # OK to delete if all the business units can be deleted
+                for bu in related_objects.objects:
+                    if not bu.can_be_deleted():
+                        return False
         return True
 
     def delete(self, *args, **kwargs):
         if not self.can_be_deleted():
-            raise ValueError("MBU {} cannot be deleted".format(self.pk))
+            raise ValueError(f"MBU {self.pk} cannot be deleted")
         for b in self.businessunit_set.all():
             b.delete()
         super().delete(*args, **kwargs)
@@ -207,7 +208,7 @@ class BusinessUnit(AbstractMachineGroup):
 
     def __str__(self):
         if self.is_api_enrollment_business_unit():
-            return "{} API enrollment".format(self.meta_business_unit.name)
+            return f"{self.meta_business_unit.name} API enrollment"
         else:
             return self.name
 
@@ -217,7 +218,7 @@ class BusinessUnit(AbstractMachineGroup):
         # there must always be a MetaBusinessUnit for every BusinessUnit in the inventory
         # MetaBusinessUnits can be edited in the UI, not the BusinessUnits directly
         # Many BusinessUnits can be linked to a single MetaBusinessUnit to show that they are equivalent.
-        mbu = kwargs.get('meta_business_unit', None)
+        mbu = kwargs.get('meta_business_unit')
         if not mbu:
             mbu = MetaBusinessUnit.objects.get_or_create_with_bu_key_and_name(self.key, self.name)
         self.meta_business_unit = mbu
@@ -232,7 +233,7 @@ class BusinessUnit(AbstractMachineGroup):
 
     def get_name_display(self):
         if self.is_api_enrollment_business_unit():
-            return "{} - API enrollment".format(self.meta_business_unit)
+            return f"{self.meta_business_unit} - API enrollment"
         else:
             return self.name
 
@@ -267,7 +268,7 @@ class OSVersion(AbstractMTObject):
         if self.name:
             items.insert(0, self.name)
         if self.build:
-            items.append("({})".format(self.build))
+            items.append(f"({self.build})")
         return " ".join(items)
 
     def get_number_display(self):
@@ -522,9 +523,7 @@ class MachineSnapshot(AbstractMTObject):
 
     def groups_with_links(self):
         for group in self.groups.prefetch_related('links', 'machine_links').all():
-            ll = []
-            for link in group.links.all():
-                ll.append((link.url, link.anchor_text))
+            ll = [(link.url, link.anchor_text) for link in group.links.all()]
             for link in group.machine_links.all():
                 url = link.url
                 url = url.replace('%MACHINE_SNAPSHOT_REFERENCE%', self.reference)
@@ -575,8 +574,8 @@ class MachineSnapshotCommitManager(models.Manager):
                     new_version = 1
                 else:
                     if msc.machine_snapshot != machine_snapshot \
-                       or msc.last_seen != last_seen \
-                       or msc.system_uptime != system_uptime:
+                           or msc.last_seen != last_seen \
+                           or msc.system_uptime != system_uptime:
                         new_version = msc.version + 1
                         new_parent = msc
                 new_msc = None
@@ -596,13 +595,16 @@ class MachineSnapshotCommitManager(models.Manager):
             msc = MachineSnapshotCommit.objects.get(serial_number=serial_number,
                                                     source=source,
                                                     version=new_version)
-            if msc.machine_snapshot == machine_snapshot:
-                logger.warning("MachineSnapshotCommit race with same snapshot for "
-                               "source {} and serial_number {}".format(source, serial_number))
-                return None, machine_snapshot
-            else:
-                raise MTOError("MachineSnapshotCommit race for "
-                               "source {} and serial_number {}".format(source, serial_number))
+            if msc.machine_snapshot != machine_snapshot:
+                raise MTOError(
+                    f"MachineSnapshotCommit race for source {source} and serial_number {serial_number}"
+                )
+
+            logger.warning(
+                f"MachineSnapshotCommit race with same snapshot for source {source} and serial_number {serial_number}"
+            )
+
+            return None, machine_snapshot
 
 
 class MachineSnapshotCommit(models.Model):
@@ -623,13 +625,12 @@ class MachineSnapshotCommit(models.Model):
     def update_diff(self):
         if not self.parent:
             return None
-        else:
-            diff = self.machine_snapshot.diff(self.parent.machine_snapshot)
-            if self.parent.last_seen and self.parent.last_seen != self.last_seen:
-                diff["last_seen"] = {"removed": self.parent.last_seen}
-            if self.last_seen and self.parent.last_seen != self.last_seen:
-                diff.setdefault("last_seen", {})["added"] = self.last_seen
-            return diff
+        diff = self.machine_snapshot.diff(self.parent.machine_snapshot)
+        if self.parent.last_seen and self.parent.last_seen != self.last_seen:
+            diff["last_seen"] = {"removed": self.parent.last_seen}
+        if self.last_seen and self.parent.last_seen != self.last_seen:
+            diff.setdefault("last_seen", {})["added"] = self.last_seen
+        return diff
 
     def get_system_update_for_display(self):
         if self.system_uptime:
@@ -654,7 +655,7 @@ class Taxonomy(models.Model):
 
     def __str__(self):
         if self.meta_business_unit:
-            return "{}/{}".format(self.meta_business_unit, self.name)
+            return f"{self.meta_business_unit}/{self.name}"
         else:
             return self.name
 
@@ -672,13 +673,21 @@ class Taxonomy(models.Model):
             if related_objects.objects_count:
                 if related_objects.to_model in known_models:
                     label, label_plural, url = known_models[related_objects.to_model]
-                    link_list.append(("{} {}".format(related_objects.objects_count,
-                                                     label if related_objects.objects_count == 1 else label_plural),
-                                      url))
+                    link_list.append(
+                        (
+                            f"{related_objects.objects_count} {label if related_objects.objects_count == 1 else label_plural}",
+                            url,
+                        )
+                    )
+
                 else:
-                    link_list.append(("{} {}".format(related_objects.objects_count,
-                                                     related_objects.name),
-                                      None))
+                    link_list.append(
+                        (
+                            f"{related_objects.objects_count} {related_objects.name}",
+                            None,
+                        )
+                    )
+
         return link_list
 
 
@@ -730,9 +739,9 @@ class Tag(models.Model):
 
     def __str__(self):
         if self.taxonomy:
-            return "{}: {}".format(self.taxonomy, self.name)
+            return f"{self.taxonomy}: {self.name}"
         if self.meta_business_unit:
-            return "{}/{}".format(self.meta_business_unit, self.name)
+            return f"{self.meta_business_unit}/{self.name}"
         else:
             return self.name
 
@@ -746,11 +755,18 @@ class Tag(models.Model):
     def links(self):
         known_models = {
             EnrollmentSecret: ("enrollment secret", "enrollment secrets", None),
-            MachineTag: ("machine", "machines",
-                         "{}?tag={}".format(reverse("inventory:index"), self.id)),
-            MetaBusinessUnitTag: ("business unit", "business units",
-                                  "{}?tag={}".format(reverse("inventory:mbu"), self.id))
+            MachineTag: (
+                "machine",
+                "machines",
+                f'{reverse("inventory:index")}?tag={self.id}',
+            ),
+            MetaBusinessUnitTag: (
+                "business unit",
+                "business units",
+                f'{reverse("inventory:mbu")}?tag={self.id}',
+            ),
         }
+
         link_list = []
         for related_objects in find_all_related_objects(self):
             if related_objects.name in ("taxonomy", "meta_business_unit"):
@@ -758,13 +774,21 @@ class Tag(models.Model):
             if related_objects.objects_count:
                 if related_objects.to_model in known_models:
                     label, label_plural, url = known_models[related_objects.to_model]
-                    link_list.append(("{} {}".format(related_objects.objects_count,
-                                                     label if related_objects.objects_count == 1 else label_plural),
-                                      url))
+                    link_list.append(
+                        (
+                            f"{related_objects.objects_count} {label if related_objects.objects_count == 1 else label_plural}",
+                            url,
+                        )
+                    )
+
                 else:
-                    link_list.append(("{} {}".format(related_objects.objects_count,
-                                                     related_objects.name),
-                                      None))
+                    link_list.append(
+                        (
+                            f"{related_objects.objects_count} {related_objects.name}",
+                            None,
+                        )
+                    )
+
         return link_list
 
 
@@ -809,10 +833,9 @@ class MetaMachine:
     @staticmethod
     def make_urlsafe_serial_number(serial_number):
         if serial_number.startswith(".") or \
-           urllib.parse.quote(serial_number, safe="") != serial_number:
-            return ".{}".format(
-                base64.urlsafe_b64encode(serial_number.encode("utf-8")).decode("utf-8").rstrip("=")
-            )
+               urllib.parse.quote(serial_number, safe="") != serial_number:
+            return f'.{base64.urlsafe_b64encode(serial_number.encode("utf-8")).decode("utf-8").rstrip("=")}'
+
         else:
             return serial_number
 
@@ -841,7 +864,7 @@ class MetaMachine:
         except KeyError:
             logger.warning("Missing api.tls_hostname configuration key")
         else:
-            return "{}{}".format(tls_hostname.rstrip('/'), self.get_absolute_url())
+            return f"{tls_hostname.rstrip('/')}{self.get_absolute_url()}"
 
     @property
     def names_with_sources(self):
@@ -853,21 +876,30 @@ class MetaMachine:
     # Meta? Business units
 
     def business_units(self, include_api_enrollment_business_unit=False):
-        bu_l = []
-        for ms in self.snapshots:
-            if (ms.business_unit and
-                (include_api_enrollment_business_unit or
-                 not ms.business_unit.is_api_enrollment_business_unit())):
-                bu_l.append(ms.business_unit)
-        return bu_l
+        return [
+            ms.business_unit
+            for ms in self.snapshots
+            if (
+                ms.business_unit
+                and (
+                    include_api_enrollment_business_unit
+                    or not ms.business_unit.is_api_enrollment_business_unit()
+                )
+            )
+        ]
 
     @cached_property
     def meta_business_units(self):
-        return set(bu.meta_business_unit for bu in self.business_units(include_api_enrollment_business_unit=True))
+        return {
+            bu.meta_business_unit
+            for bu in self.business_units(
+                include_api_enrollment_business_unit=True
+            )
+        }
 
     @cached_property
     def meta_business_unit_id_set(self):
-        return set(mbu.id for mbu in self.meta_business_units)
+        return {mbu.id for mbu in self.meta_business_units}
 
     @cached_property
     def platform(self):
@@ -892,13 +924,13 @@ class MetaMachine:
     # Filtered snapshots
 
     def snapshots_with_osx_app_instances(self):
-        return list(ms for ms in self.snapshots if ms.osx_app_instances.count())
+        return [ms for ms in self.snapshots if ms.osx_app_instances.count()]
 
     def snapshots_with_program_instances(self):
-        return list(ms for ms in self.snapshots if ms.program_instances.count())
+        return [ms for ms in self.snapshots if ms.program_instances.count()]
 
     def snapshots_with_deb_packages(self):
-        return list(ms for ms in self.snapshots if ms.deb_packages.count())
+        return [ms for ms in self.snapshots if ms.deb_packages.count()]
 
     # Inventory tags
 
@@ -958,10 +990,8 @@ class MetaMachine:
                                                        .select_related("tag")
                                                        .filter(serial_number=self.serial_number,
                                                                tag__taxonomy=taxonomy))
-            existing_tag_names = set(mt.tag.name for mt in existing_machine_tags)
-            # delete old tags
-            tag_names_to_delete = existing_tag_names - tag_names
-            if tag_names_to_delete:
+            existing_tag_names = {mt.tag.name for mt in existing_machine_tags}
+            if tag_names_to_delete := existing_tag_names - tag_names:
                 existing_machine_tags.filter(tag__name__in=tag_names_to_delete).delete()
             # add missing tags
             for tag_name in tag_names - existing_tag_names:

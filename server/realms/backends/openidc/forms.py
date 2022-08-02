@@ -26,8 +26,7 @@ class OpenIDConnectRealmForm(RealmForm):
         super().__init__(*args, **kwargs)
         if self.instance:
             for attr in ("discovery_url", "client_id", "client_secret", "extra_scopes"):
-                val = self.instance.config.get(attr)
-                if val:
+                if val := self.instance.config.get(attr):
                     if attr == "extra_scopes":
                         val = ", ".join(val)
                     self.fields[attr].initial = val

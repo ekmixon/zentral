@@ -153,7 +153,6 @@ class NginxAuthRequestView(View):
                 status_code = 401
             response = HttpResponse('Signed out')
             response.status_code = status_code
-            return response
         else:
             if not request.user.is_superuser:
                 authorized_groups = self.get_external_link_authorization_groups()
@@ -163,4 +162,5 @@ class NginxAuthRequestView(View):
             response = HttpResponse("OK")
             response["X-Zentral-Username"] = request.user.username
             response["X-Zentral-Email"] = request.user.email
-            return response
+
+        return response

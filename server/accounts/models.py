@@ -31,7 +31,7 @@ class User(AbstractUser):
             return self.email or self.username
 
     def get_type_display(self):
-        return "user" if not self.is_service_account else "service account"
+        return "service account" if self.is_service_account else "user"
 
     def get_absolute_url(self):
         return reverse("accounts:user", args=(self.pk,))
@@ -50,19 +50,18 @@ class User(AbstractUser):
         if self.is_service_account or self.is_remote:
             # service accounts or remote users cannot have a valid password
             self.set_unusable_password()
-        else:
-            if self.pk:
-                old_user = self._meta.model.objects.get(pk=self.pk)
-                if old_user.password != self.password:
-                    if old_user.has_usable_password():
-                        UserPasswordHistory.objects.create(
-                            user=self,
-                            password=old_user.password,
-                            created_at=old_user.password_updated_at or old_user.date_joined
-                        )
-                    self.password_updated_at = timezone.now()
-            elif self.password:
+        elif self.pk:
+            old_user = self._meta.model.objects.get(pk=self.pk)
+            if old_user.password != self.password:
+                if old_user.has_usable_password():
+                    UserPasswordHistory.objects.create(
+                        user=self,
+                        password=old_user.password,
+                        created_at=old_user.password_updated_at or old_user.date_joined
+                    )
                 self.password_updated_at = timezone.now()
+        elif self.password:
+            self.password_updated_at = timezone.now()
         super().save(*args, **kwargs)
 
     def username_and_email_editable(self):
@@ -125,7 +124,7 @@ class UserVerificationDevice(models.Model):
         return self.TYPE
 
     def __str__(self):
-        return "{} {}".format(self.get_type_for_display(), self.name)
+        return f"{self.get_type_for_display()} {self.name}"
 
     def get_delete_url(self):
         return reverse(self.delete_url_name, args=(self.pk,))

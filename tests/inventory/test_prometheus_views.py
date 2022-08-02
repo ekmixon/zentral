@@ -38,14 +38,23 @@ class PrometheusViewsTestCase(TestCase):
             sample = family.samples[0]
             self.assertEqual(sample.value, 1)  # only one machine in inventory
             labels_dict[sample.name] = sample.labels
-        self.assertEqual(labels_dict['zentral_inventory_osx_apps'],
-                         {'name': 'Baller.app',
-                          'source': 'tests.zentral.io#{}'.format(source_id),
-                          'version_str': '1.2.3'})
-        self.assertEqual(labels_dict['zentral_inventory_os_versions'],
-                         {'build': '_',
-                          'major': '10',
-                          'minor': '11',
-                          'name': 'OS X',
-                          'patch': '1',
-                          'source': 'tests.zentral.io#{}'.format(source_id)})
+        self.assertEqual(
+            labels_dict['zentral_inventory_osx_apps'],
+            {
+                'name': 'Baller.app',
+                'source': f'tests.zentral.io#{source_id}',
+                'version_str': '1.2.3',
+            },
+        )
+
+        self.assertEqual(
+            labels_dict['zentral_inventory_os_versions'],
+            {
+                'build': '_',
+                'major': '10',
+                'minor': '11',
+                'name': 'OS X',
+                'patch': '1',
+                'source': f'tests.zentral.io#{source_id}',
+            },
+        )

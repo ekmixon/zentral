@@ -98,7 +98,7 @@ class MunkiInstallProbeViewsTestCase(TestCase):
         self.assertEqual(probe.get_model(), "MunkiInstallProbe")
         self.assertEqual(probe.name, name)
         self.assertEqual(probe.unattended_installs, False)
-        self.assertEqual(probe.install_types, set([install_types]))
+        self.assertEqual(probe.install_types, {install_types})
         self.assertIn("object", response.context)
         probe_source = response.context["object"]
         self.assertEqual(probe_source.name, name)
@@ -131,9 +131,9 @@ class MunkiInstallProbeViewsTestCase(TestCase):
         response = self.client.post(reverse("munki:update_install_probe", args=(probe_source.pk,)),
                                     {"install_types": "install,removal"},
                                     follow=True)
-        self.assertRedirects(response, "{}#munki".format(probe_source.get_absolute_url()))
+        self.assertRedirects(response, f"{probe_source.get_absolute_url()}#munki")
         probe = response.context["probe"]
-        self.assertEqual(probe.install_types, set(["install", "removal"]))
+        self.assertEqual(probe.install_types, {"install", "removal"})
         self.assertContains(response, "install, removal")
 
     # probes index

@@ -73,8 +73,7 @@ class MachineListView(PermissionRequiredMixin, FormView):
             raise Http404
         self.msquery = self.get_msquery(request)
         if request.method == "GET":
-            redirect_url = self.msquery.redirect_url()
-            if redirect_url:
+            if redirect_url := self.msquery.redirect_url():
                 return HttpResponseRedirect(redirect_url)
         return super().dispatch(request, *args, **kwargs)
 
@@ -98,11 +97,11 @@ class MachineListView(PermissionRequiredMixin, FormView):
         if self.msquery.page > 1:
             qd = self.request.GET.copy()
             qd['page'] = self.msquery.page - 1
-            ctx['previous_url'] = "?{}".format(qd.urlencode())
+            ctx['previous_url'] = f"?{qd.urlencode()}"
         if self.msquery.page * self.msquery.paginate_by < self.msquery.count():
             qd = self.request.GET.copy()
             qd['page'] = self.msquery.page + 1
-            ctx['next_url'] = "?{}".format(qd.urlencode())
+            ctx['next_url'] = f"?{qd.urlencode()}"
         # search form
         search_form_qd = self.request.GET.copy()
         for key in [f.get_query_kwarg() for f in self.msquery.filters if f.free_input]:
@@ -115,18 +114,27 @@ class MachineListView(PermissionRequiredMixin, FormView):
             _, anchor_text = breadcrumbs.pop()
             reset_qd = self.request.GET.copy()
             reset_qd.pop('page', None)
-            reset_link = "?{}".format(reset_qd.urlencode())
-            breadcrumbs.extend([(reset_link, anchor_text),
-                                (None, "page {} of {}".format(self.msquery.page, num_pages))])
+            reset_link = f"?{reset_qd.urlencode()}"
+            breadcrumbs.extend(
+                [
+                    (reset_link, anchor_text),
+                    (None, f"page {self.msquery.page} of {num_pages}"),
+                ]
+            )
+
         ctx['breadcrumbs'] = breadcrumbs
         msquery_cqd = self.msquery.get_canonical_query_dict()
         ctx['export_links'] = []
         for fmt in ("xlsx", "zip"):
             export_qd = msquery_cqd.copy()
             export_qd["export_format"] = fmt
-            ctx['export_links'].append((fmt,
-                                        "{}?{}".format(reverse("inventory_api:machines_export"),
-                                                       export_qd.urlencode())))
+            ctx['export_links'].append(
+                (
+                    fmt,
+                    f'{reverse("inventory_api:machines_export")}?{export_qd.urlencode()}',
+                )
+            )
+
         return ctx
 
     def form_valid(self, form):
@@ -161,18 +169,21 @@ class GroupsView(PermissionRequiredMixin, TemplateView):
         context['inventory'] = True
         qs = MachineGroup.objects.current()
         if self.search_form.is_valid():
-            name = self.search_form.cleaned_data['name']
-            if name:
+            if name := self.search_form.cleaned_data['name']:
                 qs = qs.filter(name__icontains=name)
-            source = self.search_form.cleaned_data['source']
-            if source:
+            if source := self.search_form.cleaned_data['source']:
                 qs = qs.filter(source=source)
         context['object_list'] = qs
         context['search_form'] = self.search_form
         breadcrumbs = []
         if self.search_form.is_valid() and len([i for i in self.search_form.cleaned_data.values() if i]):
-            breadcrumbs.append((reverse('inventory:groups'), 'Inventory groups'))
-            breadcrumbs.append((None, "Search"))
+            breadcrumbs.extend(
+                (
+                    (reverse('inventory:groups'), 'Inventory groups'),
+                    (None, "Search"),
+                )
+            )
+
         else:
             breadcrumbs.append((None, "Inventory groups"))
         context['breadcrumbs'] = breadcrumbs
@@ -191,7 +202,7 @@ class GroupMachinesView(MachineListView):
         return ms_query
 
     def get_list_title(self):
-        return "Group: {} - {}".format(self.object.source.name, self.object.name)
+        return f"Group: {self.object.source.name} - {self.object.name}"
 
     def get_breadcrumbs(self, **kwargs):
         return [(reverse('inventory:groups'), 'Inventory groups'),
@@ -212,7 +223,7 @@ class OSXAppInstanceMachinesView(MachineListView):
         return ms_query
 
     def get_list_title(self):
-        return "macOS app instance: {}".format(self.object.app)
+        return f"macOS app instance: {self.object.app}"
 
     def get_breadcrumbs(self, **kwargs):
         return [(reverse('inventory:macos_apps'), 'macOS applications'),
@@ -232,14 +243,11 @@ class MBUView(PermissionRequiredMixin, ListView):
     def get_queryset(self, **kwargs):
         qs = MetaBusinessUnit.objects.all()
         if self.search_form.is_valid():
-            name = self.search_form.cleaned_data['name']
-            if name:
+            if name := self.search_form.cleaned_data['name']:
                 qs = qs.filter(name__icontains=name)
-            source = self.search_form.cleaned_data['source']
-            if source:
+            if source := self.search_form.cleaned_data['source']:
                 qs = qs.filter(businessunit__source=source)
-            tag = self.search_form.cleaned_data['tag']
-            if tag:
+            if tag := self.search_form.cleaned_data['tag']:
                 qs = qs.filter(metabusinessunittag__tag=tag)
         return qs
 
@@ -252,22 +260,27 @@ class MBUView(PermissionRequiredMixin, ListView):
         if page.has_next():
             qd = self.request.GET.copy()
             qd['page'] = page.next_page_number()
-            context['next_url'] = "?{}".format(qd.urlencode())
+            context['next_url'] = f"?{qd.urlencode()}"
         if page.has_previous():
             qd = self.request.GET.copy()
             qd['page'] = page.previous_page_number()
-            context['previous_url'] = "?{}".format(qd.urlencode())
+            context['previous_url'] = f"?{qd.urlencode()}"
         # breadcrumbs
         breadcrumbs = []
         qd = self.request.GET.copy()
         qd.pop('page', None)
-        reset_link = "?{}".format(qd.urlencode())
+        reset_link = f"?{qd.urlencode()}"
         if self.search_form.is_valid() and len([i for i in self.search_form.cleaned_data.values() if i]):
-            breadcrumbs.append((reverse('inventory:mbu'), 'Inventory business units'))
-            breadcrumbs.append((reset_link, "Search"))
+            breadcrumbs.extend(
+                (
+                    (reverse('inventory:mbu'), 'Inventory business units'),
+                    (reset_link, "Search"),
+                )
+            )
+
         else:
             breadcrumbs.append((reset_link, "Inventory business units"))
-        breadcrumbs.append((None, "page {} of {}".format(page.number, page.paginator.num_pages)))
+        breadcrumbs.append((None, f"page {page.number} of {page.paginator.num_pages}"))
         context['breadcrumbs'] = breadcrumbs
         return context
 
@@ -417,7 +430,7 @@ class MBUMachinesView(MachineListView):
         return ms_query
 
     def get_list_title(self):
-        return "BU: {}".format(self.object.name)
+        return f"BU: {self.object.name}"
 
     def get_breadcrumbs(self, **kwargs):
         return [(reverse('inventory:mbu'), 'Inventory business units'),
@@ -479,8 +492,7 @@ class MachineView(PermissionRequiredMixin, TemplateView):
                                                  key=lambda t: t[0].lower()):
             source_subview = _get_source_machine_subview(source, machine.serial_number, self.request.user)
             context['machine_snapshots'].append((source_display, ms, source_subview))
-        machine_snapshots_count = len(context['machine_snapshots'])
-        if machine_snapshots_count:
+        if machine_snapshots_count := len(context['machine_snapshots']):
             context['max_source_tab_with'] = 100 // machine_snapshots_count
         context['serial_number'] = machine.serial_number
         context['fetch_heartbeats'] = frontend_store.last_machine_heartbeats
@@ -527,8 +539,7 @@ class ArchiveMachineView(PermissionRequiredMixin, TemplateView):
 
 def _clean_machine_events_fetch_kwargs(request, serial_number, default_time_range=None):
     kwargs = {"serial_number": serial_number}
-    event_type = request.GET.get("et")
-    if event_type:
+    if event_type := request.GET.get("et"):
         if event_type not in event_types:
             raise ValueError("Unknown event type")
         else:
@@ -550,8 +561,7 @@ def _clean_machine_events_fetch_kwargs(request, serial_number, default_time_rang
         kwargs["from_dt"] = datetime.utcnow() - timedelta(days=30)
     else:
         raise ValueError("Uknown time range")
-    raw_cursor = request.GET.get("rc")
-    if raw_cursor:
+    if raw_cursor := request.GET.get("rc"):
         try:
             cursor = signing.loads(raw_cursor)
         except signing.BadSignature:
@@ -599,17 +609,23 @@ class MachineEventsView(PermissionRequiredMixin, TemplateView):
         for event_type, count in frontend_store.get_aggregated_machine_event_counts(**self.fetch_kwargs).items():
             total_event_count += count
             event_type_options.append(
-                (event_type,
-                 self.request_event_type == event_type,
-                 "{} ({})".format(event_type.replace('_', ' ').title(), count))
+                (
+                    event_type,
+                    self.request_event_type == event_type,
+                    f"{event_type.replace('_', ' ').title()} ({count})",
+                )
             )
+
         event_type_options.sort()
         event_type_options.insert(
             0,
-            ('',
-             self.request_event_type in [None, ''],
-             'All ({})'.format(total_event_count))
+            (
+                '',
+                self.request_event_type in [None, ''],
+                f'All ({total_event_count})',
+            ),
         )
+
         context['event_type_options'] = event_type_options
         qd = self.request.GET.copy()
         if "tr" not in qd:
@@ -618,12 +634,17 @@ class MachineEventsView(PermissionRequiredMixin, TemplateView):
             reverse("inventory:fetch_machine_events", args=(self.machine.get_urlsafe_serial_number(),)),
             qd.urlencode()
         )
-        store_links = []
         store_redirect_url = reverse("inventory:machine_events_store_redirect",
                                      args=(self.machine.get_urlsafe_serial_number(),))
-        for store in stores.iter_machine_events_url_store_for_user(self.request.user):
-            if not self.request_event_type or store.is_event_type_included(self.request_event_type):
-                store_links.append((store_redirect_url, store.name))
+        store_links = [
+            (store_redirect_url, store.name)
+            for store in stores.iter_machine_events_url_store_for_user(
+                self.request.user
+            )
+            if not self.request_event_type
+            or store.is_event_type_included(self.request_event_type)
+        ]
+
         context["store_links"] = store_links
         return context
 
@@ -673,8 +694,7 @@ class MachineEventsStoreRedirectView(PermissionRequiredMixin, View):
             event_store_name = request.GET.get("es")
             for store in stores:
                 if store.name == event_store_name:
-                    url = store.get_machine_events_url(**fetch_kwargs)
-                    if url:
+                    if url := store.get_machine_events_url(**fetch_kwargs):
                         return HttpResponseRedirect(url)
                     break
         return HttpResponseRedirect(
@@ -906,10 +926,7 @@ class MacOSAppsView(PermissionRequiredMixin, TemplateView):
             page = int(qd.pop('page', None)[0])
         except (IndexError, TypeError, ValueError):
             page = 1
-        if page > 1:
-            reset_link = "?{}".format(qd.urlencode())
-        else:
-            reset_link = "?"
+        reset_link = f"?{qd.urlencode()}" if page > 1 else "?"
         breadcrumbs = [(reset_link, "Search macOS applications")]
         if search_form.has_changed() and search_form.is_valid():
             (ctx['object_list'],
@@ -920,13 +937,18 @@ class MacOSAppsView(PermissionRequiredMixin, TemplateView):
             if next_page:
                 qd = self.request.GET.copy()
                 qd['page'] = next_page
-                ctx['next_url'] = "?{}".format(qd.urlencode())
+                ctx['next_url'] = f"?{qd.urlencode()}"
             if previous_page:
                 qd = self.request.GET.copy()
                 qd['page'] = previous_page
-                ctx['previous_url'] = "?{}".format(qd.urlencode())
-            breadcrumbs.append((None, "page {} of {}".format(search_form.cleaned_data['page'],
-                                                             ctx.get('total_pages', 1))))
+                ctx['previous_url'] = f"?{qd.urlencode()}"
+            breadcrumbs.append(
+                (
+                    None,
+                    f"page {search_form.cleaned_data['page']} of {ctx.get('total_pages', 1)}",
+                )
+            )
+
             ctx['table_headers'] = [search_form.get_header_label_and_link("bundle_name", "Bundle name")]
             ctx['table_headers'].extend((name, None) for name in ("Bundle ID", "Version", "Version str."))
             ctx['table_headers'].append(search_form.get_header_label_and_link("machine_count", "Machines"))

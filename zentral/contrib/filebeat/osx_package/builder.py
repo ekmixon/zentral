@@ -19,9 +19,7 @@ class ZentralFilebeatPkgBuilder(EnrollmentPackageBuilder):
                          release=enrollment.filebeat_release)
 
     def extra_build_steps(self):
-        # filebeat binary
-        release = self.build_kwargs["release"]
-        if release:
+        if release := self.build_kwargs["release"]:
             local_path = get_filebeat_binary(self.build_kwargs["release"])
             filebeat_path = self.get_root_path("usr/local/zentral/bin/filebeat")
             filebeat_dir = os.path.dirname(filebeat_path)
@@ -29,9 +27,7 @@ class ZentralFilebeatPkgBuilder(EnrollmentPackageBuilder):
                 os.makedirs(filebeat_dir)
             shutil.copy(local_path, filebeat_path)
 
-        # scepclient binary
-        local_path = get_scepclient_binary()
-        if local_path:
+        if local_path := get_scepclient_binary():
             scepclient_path = self.get_root_path("usr/local/zentral/bin/scepclient")
             scepclient_dir = os.path.dirname(scepclient_path)
             if not os.path.exists(scepclient_dir):

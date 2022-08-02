@@ -86,9 +86,9 @@ def build_csr(tmpdir, serial_number, cn, org, challenge):
     openssl_req_config = os.path.join(tmpdir, "openssl_req.cfg")
     with open(openssl_req_config, "w") as of:
         for section, section_body in cfg.items():
-            of.write("[ {} ]\n".format(section))
+            of.write(f"[ {section} ]\n")
             for key, val in section_body.items():
-                of.write("{} = {}\n".format(key, val))
+                of.write(f"{key} = {val}\n")
     csr = os.path.join(tmpdir, "csr.pem")  # expected csr file for scepclient
     subprocess.check_call([
         OPENSSL,

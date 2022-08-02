@@ -89,7 +89,7 @@ if __name__ == '__main__':
         sys.exit(2)
     cmd = sys.argv[1]
     env = os.environ.copy()
-    args = KNOWN_COMMANDS.get(cmd, None)
+    args = KNOWN_COMMANDS.get(cmd)
     if args:
         filename = args[0]
         args.extend(sys.argv[2:])
@@ -99,10 +99,9 @@ if __name__ == '__main__':
         if cmd in KNOWN_COMMANDS_TRIGGERING_COLLECTSTATIC:
             django_collectstatic()
         env.update(KNOWN_COMMANDS_EXTRA_ENV.get(cmd, {}))
-        wd = KNOWN_COMMANDS_CHDIR.get(cmd)
-        if wd:
+        if wd := KNOWN_COMMANDS_CHDIR.get(cmd):
             os.chdir(wd)
-        print('Launch known command "{}"'.format(cmd), flush=True)
+        print(f'Launch known command "{cmd}"', flush=True)
     else:
         filename = cmd
         args = sys.argv[1:]

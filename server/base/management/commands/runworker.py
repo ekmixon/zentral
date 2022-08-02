@@ -34,10 +34,9 @@ class Command(BaseCommand):
     def _get_workers(list_workers, requested_worker_name):
         all_workers = []
         found_worker = None
-        for idx, worker in enumerate(sorted(get_workers(), key=lambda w: w.name)):
+        for worker in sorted(get_workers(), key=lambda w: w.name):
             if list_workers:
                 all_workers.append(worker.name)
-                continue
             elif requested_worker_name and worker.name == requested_worker_name:
                 found_worker = worker
                 break
@@ -71,11 +70,11 @@ class Command(BaseCommand):
             print(json.dumps({"workers": all_workers}))
         else:
             for worker_name in all_workers:
-                print("Worker '{}'".format(worker_name))
+                print(f"Worker '{worker_name}'")
 
     def handle(self, *args, **options):
         list_workers = options['list_workers']
-        requested_worker_name = options.get('worker', None)
+        requested_worker_name = options.get('worker')
         if not list_workers and not requested_worker_name:
             logger.error("'runworker' missing argument: --list-workers or a worker name")
             sys.exit(100)

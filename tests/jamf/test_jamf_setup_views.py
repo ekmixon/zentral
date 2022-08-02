@@ -41,11 +41,12 @@ class JamfSetupViewsTestCase(TestCase):
 
     def _force_jamf_instance(self):
         jamf_instance = JamfInstance.objects.create(
-            host="{}.example.com".format(get_random_string(12)),
+            host=f"{get_random_string(12)}.example.com",
             port=443,
             path="/JSSResource",
-            user=get_random_string()
+            user=get_random_string(),
         )
+
         jamf_instance.set_password(get_random_string())
         super(JamfInstance, jamf_instance).save()
         return jamf_instance

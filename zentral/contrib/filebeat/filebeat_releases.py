@@ -11,9 +11,7 @@ FILEBEAT_DOWNLOAD_URL_TMPL = "https://artifacts.elastic.co/downloads/beats/fileb
 
 def get_filebeat_versions():
     resp = requests.get(GITHUB_BEATS_RELEASES_URL)
-    versions = []
-    for release in resp.json():
-        versions.append(release["tag_name"].strip("v"))
+    versions = [release["tag_name"].strip("v") for release in resp.json()]
     versions.sort(key=lambda v: [int(i) for i in v.split("-")[0].split(".")], reverse=True)
     return versions
 

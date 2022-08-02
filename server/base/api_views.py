@@ -30,8 +30,7 @@ class TaskResultView(APIView):
                 except (TypeError, ValueError):
                     logger.exception("Could not load task result")
                 else:
-                    filepath = result.get("filepath")
-                    if filepath:
+                    if filepath := result.get("filepath"):
                         response["download_url"] = reverse("base_api:task_result_file_download", args=(task_id,))
         return Response(response)
 

@@ -120,14 +120,15 @@ class TestMDMCommands(TestCase):
         # DEP enrollment
         dep_organization = DEPOrganization.objects.create(
             identifier=get_random_string(128),
-            admin_id="{}@zentral.io".format(get_random_string()),
+            admin_id=f"{get_random_string()}@zentral.io",
             name=get_random_string(),
-            email="{}@zentral.io".format(get_random_string()),
+            email=f"{get_random_string()}@zentral.io",
             phone=get_random_string(),
             address=get_random_string(),
             type=DEPOrganization.ORG,
-            version=DEPOrganization.V2
+            version=DEPOrganization.V2,
         )
+
         dep_token = DEPToken.objects.create(
             certificate=get_random_string().encode("utf-8"),
             private_key=get_random_string().encode("utf-8"),
@@ -178,16 +179,18 @@ class TestMDMCommands(TestCase):
             platforms=platforms
         )
         artifact_versions = []
-        payload_identifier = "{}.{}.{}".format(get_random_string(2), get_random_string(4), str(uuid.uuid4()))
+        payload_identifier = (
+            f"{get_random_string(2)}.{get_random_string(4)}.{str(uuid.uuid4())}"
+        )
+
         payload_identifier = None
         for version in range(version_count, 0, -1):
             artifact_version = ArtifactVersion.objects.create(artifact=artifact, version=version)
             artifact_versions.append(artifact_version)
             if artifact_type == ArtifactType.Profile:
                 if payload_identifier is None:
-                    payload_identifier = "{}.{}.{}".format(get_random_string(2),
-                                                           get_random_string(4),
-                                                           str(uuid.uuid4()).upper())
+                    payload_identifier = f"{get_random_string(2)}.{get_random_string(4)}.{str(uuid.uuid4()).upper()}"
+
                 payload_uuid = str(uuid.uuid4()).upper()
                 payload_display_name = get_random_string(16)
                 payload_description = get_random_string(32)
